@@ -9,7 +9,7 @@
 #ifndef _logsys__stdlogd__hpp_INCLUDED_
 #define _logsys__stdlogd__hpp_INCLUDED_
 
-#include "log_base.hpp"
+#include "stdlogb.hpp"
 #include "stdlog.hpp"
 
 
@@ -17,7 +17,7 @@ namespace logsys{
 
 
 	/// \brief The standard dynamic log class
-	class stdlogd: public log_base, protected stdlog{
+	class stdlogd: public stdlogb, protected stdlog{
 	public:
 		/// \copydoc stdlog::pre()
 		void pre()override{

@@ -12,7 +12,7 @@
 namespace logsys{
 
 
-	std::function< std::unique_ptr< log_base >() > log_base::factory(
+	std::function< std::unique_ptr< stdlogb >() > stdlogb::factory(
 		[]{ return std::make_unique< stdlogd >(); }
 	);
 

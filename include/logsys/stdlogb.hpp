@@ -6,8 +6,8 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _logsys__log_base__hpp_INCLUDED_
-#define _logsys__log_base__hpp_INCLUDED_
+#ifndef _logsys__stdlogb__hpp_INCLUDED_
+#define _logsys__stdlogb__hpp_INCLUDED_
 
 #include <ostream>
 #include <memory>
@@ -18,14 +18,14 @@ namespace logsys{
 
 
 	/// \brief Base class for dynamic log tag classes
-	class log_base{
+	class stdlogb{
 	public:
 		/// \brief Assign your log object maker to this variable
-		static std::function< std::unique_ptr< log_base >() > factory;
+		static std::function< std::unique_ptr< stdlogb >() > factory;
 
 
 		/// \brief Destructor
-		virtual ~log_base(){}
+		virtual ~stdlogb(){}
 
 
 		/// \brief Called immediate before message output
@@ -53,7 +53,7 @@ namespace logsys{
 
 		/// \brief Output operator overload
 		template < typename T >
-		friend log_base& operator<<(log_base& log, T&& data){
+		friend stdlogb& operator<<(stdlogb& log, T&& data){
 			log.os() << static_cast< T&& >(data);
 			return log;
 		}
