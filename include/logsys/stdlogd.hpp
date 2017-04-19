@@ -1,19 +1,19 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2015-2017 Benjamin Buch
 //
-// https://github.com/bebuch/log
+// https://github.com/bebuch/logsys
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _log__stdlogd__hpp_INCLUDED_
-#define _log__stdlogd__hpp_INCLUDED_
+#ifndef _logsys__stdlogd__hpp_INCLUDED_
+#define _logsys__stdlogd__hpp_INCLUDED_
 
 #include "log_base.hpp"
 #include "stdlog.hpp"
 
 
-namespace log{
+namespace logsys{
 
 
 	/// \brief The standard dynamic log class

@@ -1,0 +1,44 @@
+import os ;
+local boost = [ os.environ BOOST ] ;
+local io_tools = ../io_tools ;
+
+
+use-project /boost
+	: $(boost)
+	;
+
+project logsys
+	:
+	source-location src
+	:
+	requirements <include>include
+
+	<warnings>all
+	<c++-template-depth>1024
+
+	<toolset>gcc:<cxxflags>-std=c++1z
+	<toolset>gcc:<cxxflags>-fconstexpr-depth=1024
+	<toolset>gcc:<cxxflags>-Wall
+	<toolset>gcc:<cxxflags>-Wextra
+	<toolset>gcc:<linkflags>-lpthread
+
+	<toolset>clang:<cxxflags>-std=c++1z
+	<toolset>clang:<cxxflags>-fconstexpr-depth=1024
+	<toolset>clang:<cxxflags>-Wall
+	<toolset>clang:<cxxflags>-Wextra
+	<toolset>clang:<cxxflags>-stdlib=libc++
+	<toolset>clang:<cxxflags>-DBOOST_ASIO_HAS_STD_CHRONO
+	<toolset>clang:<linkflags>-lpthread
+	<toolset>clang:<linkflags>-lc++abi
+	<toolset>clang:<linkflags>-stdlib=libc++
+
+	<include>$(boost)
+	<include>$(io_tools)/include
+	:
+	usage-requirements <include>include
+	;
+
+lib logsys
+	:
+	[ glob *.cpp ]
+	;

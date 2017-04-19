@@ -1,20 +1,20 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2015-2017 Benjamin Buch
 //
-// https://github.com/bebuch/log
+// https://github.com/bebuch/logsys
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _log__log_base__hpp_INCLUDED_
-#define _log__log_base__hpp_INCLUDED_
+#ifndef _logsys__log_base__hpp_INCLUDED_
+#define _logsys__log_base__hpp_INCLUDED_
 
 #include <ostream>
 #include <memory>
 #include <functional>
 
 
-namespace log{
+namespace logsys{
 
 
 	/// \brief Base class for dynamic log tag classes

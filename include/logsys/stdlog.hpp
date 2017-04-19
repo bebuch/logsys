@@ -1,13 +1,13 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2015-2017 Benjamin Buch
 //
-// https://github.com/bebuch/log
+// https://github.com/bebuch/logsys
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _log__stdlog__hpp_INCLUDED_
-#define _log__stdlog__hpp_INCLUDED_
+#ifndef _logsys__stdlog__hpp_INCLUDED_
+#define _logsys__stdlog__hpp_INCLUDED_
 
 #include <io_tools/time_to_string.hpp>
 #include <io_tools/mask_non_print.hpp>
@@ -17,7 +17,7 @@
 #include <atomic>
 
 
-namespace log{
+namespace logsys{
 
 
 	/// \brief A timed log type
