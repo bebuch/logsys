@@ -17,24 +17,11 @@
 namespace log{
 
 
-	class log_base;
-
-
-	namespace detail{
-
-
-		std::unique_ptr< log_tag > log_base_default_factory();
-
-
-	}
-
-
-	/// \brief Base class of log log class
+	/// \brief Base class for dynamic log tag classes
 	class log_base{
 	public:
 		/// \brief Assign your log object maker to this variable
-		static std::function< std::unique_ptr< log_base >() > factory
-			{&defail::log_base_default_factory};
+		static std::function< std::unique_ptr< log_base >() > factory;
 
 
 		/// \brief Destructor
@@ -79,8 +66,5 @@ namespace log{
 
 }
 
-
-// needed for log_base::factory initialization
-#include "log_tag.hpp"
 
 #endif
