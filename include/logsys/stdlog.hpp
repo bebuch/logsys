@@ -24,13 +24,13 @@ namespace logsys{
 	class stdlog{
 	public:
 		/// \brief Get a unique id for every message
-		static std::size_t unique_id(){
+		static std::size_t unique_id()noexcept{
 			static std::atomic< std::size_t > next_id(0);
 			return next_id++;
 		}
 
 		/// \brief Save start time
-		stdlog():
+		stdlog()noexcept:
 			body_(false),
 			exception_(false),
 			id_(unique_id()),
@@ -38,7 +38,7 @@ namespace logsys{
 			{}
 
 		/// \brief Output ID and time block
-		void pre(){
+		void pre()noexcept{
 			auto end = std::chrono::system_clock::now();
 
 			os_ << std::setfill('0') << std::setw(6) << id_ << ' ';
@@ -57,18 +57,18 @@ namespace logsys{
 		}
 
 		/// \brief Output exception indicator
-		void post(){
+		void post()noexcept{
 			if(exception_) os_ << " (failed)";
 			os_ << exception_text_;
 		}
 
 		/// \brief Set exception indicator to true
-		void failed(){
+		void failed()noexcept{
 			exception_ = true;
 		}
 
 		/// \brief Save exception message
-		void set_exception(std::exception const& error){
+		void set_exception(std::exception const& error)noexcept{
 			auto error_type_name = [&error]()->std::string{
 				try{
 					using boost::typeindex::type_id_runtime;
@@ -86,23 +86,23 @@ namespace logsys{
 		}
 
 		/// \brief Save text for unknown exception
-		void unknown_exception(){
+		void unknown_exception()noexcept{
 			exception_text_ = " (unknown exception catched)";
 		}
 
 		/// \brief Set body indicator to true
-		void have_body(){
+		void have_body()noexcept{
 			body_ = true;
 		}
 
 		/// \brief Output the combinded message to std::log
-		void exec()const{
+		void exec()const noexcept{
 			std::clog << (io_tools::mask_non_print(os_.str()) + '\n');
 		}
 
 		/// \brief Forward every output to the message stream
 		template < typename T >
-		friend stdlog& operator<<(stdlog& log, T&& data){
+		friend stdlog& operator<<(stdlog& log, T&& data)noexcept{
 			log.os_ << static_cast< T&& >(data);
 			return log;
 		}
