@@ -28,11 +28,11 @@ namespace logsys{
 		}catch(std::exception const& e){
 			std::cerr << "terminate with exception in stdlogb factory: "
 				<< e.what() << std::endl;
-			std::exit(1);
+			std::terminate();
 		}catch(...){
 			std::cerr << "terminate with unknown exception in stdlogb factory"
 				<< std::endl;
-			std::exit(1);
+			std::terminate();
 		}
 
 
