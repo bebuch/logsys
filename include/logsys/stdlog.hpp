@@ -38,7 +38,7 @@ namespace logsys{
 			{}
 
 		/// \brief Output ID and time block
-		void pre()noexcept{
+		void pre()noexcept try{
 			auto end = std::chrono::system_clock::now();
 
 			os_ << std::setfill('0') << std::setw(6) << id_ << ' ';
@@ -54,12 +54,28 @@ namespace logsys{
 			}else{
 				os_ << " ( no content     ) ";
 			}
+		}catch(std::exception const& e){
+			std::cerr << "terminate with exception in stdlog.pre(): "
+				<< e.what() << std::endl;
+			std::terminate();
+		}catch(...){
+			std::cerr << "terminate with unknown exception in stdlog.pre()"
+				<< std::endl;
+			std::terminate();
 		}
 
 		/// \brief Output exception indicator
-		void post()noexcept{
+		void post()noexcept try{
 			if(exception_) os_ << " (failed)";
 			os_ << exception_text_;
+		}catch(std::exception const& e){
+			std::cerr << "terminate with exception in stdlog.post(): "
+				<< e.what() << std::endl;
+			std::terminate();
+		}catch(...){
+			std::cerr << "terminate with unknown exception in stdlog.post()"
+				<< std::endl;
+			std::terminate();
 		}
 
 		/// \brief Set exception indicator to true
@@ -68,7 +84,7 @@ namespace logsys{
 		}
 
 		/// \brief Save exception message
-		void set_exception(std::exception const& error)noexcept{
+		void set_exception(std::exception const& error)noexcept try{
 			auto error_type_name = [&error]()->std::string{
 				try{
 					using boost::typeindex::type_id_runtime;
@@ -83,11 +99,27 @@ namespace logsys{
 
 			exception_text_ = " (exception catched: [" + error_type_name + "] "
 				+ error.what() + ")";
+		}catch(std::exception const& e){
+			std::cerr << "terminate with exception in stdlog.set_exception(): "
+				<< e.what() << std::endl;
+			std::terminate();
+		}catch(...){
+			std::cerr << "terminate with unknown exception in "
+				"stdlog.set_exception()" << std::endl;
+			std::terminate();
 		}
 
 		/// \brief Save text for unknown exception
-		void unknown_exception()noexcept{
+		void unknown_exception()noexcept try{
 			exception_text_ = " (unknown exception catched)";
+		}catch(std::exception const& e){
+			std::cerr << "terminate with exception in "
+				"stdlog.unknown_exception(): " << e.what() << std::endl;
+			std::terminate();
+		}catch(...){
+			std::cerr << "terminate with unknown exception in "
+				"stdlog.unknown_exception()" << std::endl;
+			std::terminate();
 		}
 
 		/// \brief Set body indicator to true
@@ -96,14 +128,30 @@ namespace logsys{
 		}
 
 		/// \brief Output the combinded message to std::log
-		void exec()const noexcept{
+		void exec()const noexcept try{
 			std::clog << (io_tools::mask_non_print(os_.str()) + '\n');
+		}catch(std::exception const& e){
+			std::cerr << "terminate with exception in stdlog.exec(): "
+				<< e.what() << std::endl;
+			std::terminate();
+		}catch(...){
+			std::cerr << "terminate with unknown exception in stdlog.exec()"
+				<< std::endl;
+			std::terminate();
 		}
 
 		/// \brief Forward every output to the message stream
 		template < typename T >
 		friend stdlog& operator<<(stdlog& log, T&& data)noexcept{
-			log.os_ << static_cast< T&& >(data);
+			try{
+				log.os_ << static_cast< T&& >(data);
+			}catch(std::exception const& e){
+				std::cerr << "exception while log output: "
+					<< e.what() << std::endl;
+			}catch(...){
+				std::cerr << "unknown exception while log output"
+					<< std::endl;
+			}
 			return log;
 		}
 

@@ -66,7 +66,15 @@ namespace logsys{
 		/// \brief Output operator overload
 		template < typename T >
 		friend stdlogb& operator<<(stdlogb& log, T&& data)noexcept{
-			log.os() << static_cast< T&& >(data);
+			try{
+				log.os() << static_cast< T&& >(data);
+			}catch(std::exception const& e){
+				std::cerr << "exception while log output: "
+					<< e.what() << std::endl;
+			}catch(...){
+				std::cerr << "unknown exception while log output"
+					<< std::endl;
+			}
 			return log;
 		}
 

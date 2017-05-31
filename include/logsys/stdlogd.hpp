@@ -54,13 +54,6 @@ namespace logsys{
 			stdlog::exec();
 		}
 
-		/// \brief Forward every output to the message stream
-		template < typename T >
-		friend stdlogd& operator<<(stdlogd& log, T&& data)noexcept{
-			log.os() << static_cast< T&& >(data);
-			return log;
-		}
-
 
 	protected:
 		/// \brief The message stream
