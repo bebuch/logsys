@@ -1,3 +1,3 @@
 # log
 
-A C++14 log system.
+A C++17 log system.
