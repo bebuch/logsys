@@ -49,6 +49,9 @@ namespace logsys{
 		/// \brief Called after post() if an exception is active
 		virtual void failed()noexcept{}
 
+		/// \brief Called if an exception has been thrown in the log function
+		virtual void log_fn_error(std::string_view)noexcept{}
+
 		/// \brief Called if an std::exception derived is active
 		virtual void set_exception(std::exception const&)noexcept{}
 
@@ -65,16 +68,8 @@ namespace logsys{
 
 		/// \brief Output operator overload
 		template < typename T >
-		friend stdlogb& operator<<(stdlogb& log, T&& data)noexcept{
-			try{
-				log.os() << static_cast< T&& >(data);
-			}catch(std::exception const& e){
-				std::cerr << "exception while log output: "
-					<< e.what() << std::endl;
-			}catch(...){
-				std::cerr << "unknown exception while log output"
-					<< std::endl;
-			}
+		friend stdlogb& operator<<(stdlogb& log, T&& data){
+			log.os() << static_cast< T&& >(data);
 			return log;
 		}
 

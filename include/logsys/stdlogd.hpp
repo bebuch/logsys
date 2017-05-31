@@ -29,6 +29,11 @@ namespace logsys{
 			stdlog::post();
 		}
 
+		/// \copydoc stdlog::log_fn_error()
+		void log_fn_error(std::string_view message)noexcept override{
+			stdlog::log_fn_error(message);
+		}
+
 		/// \copydoc stdlog::failed()
 		void failed()noexcept override{
 			stdlog::failed();

@@ -83,6 +83,20 @@ namespace logsys{
 			exception_ = true;
 		}
 
+
+		/// \brief Called if an exception has been thrown in the log function
+		void log_fn_error(std::string_view message)noexcept try{
+			os_ << "[!!EXCEPTION IN LOG FUNCTION: " << message << "!!]";
+		}catch(std::exception const& e){
+			std::cerr << "terminate with exception in stdlog.log_fn_error(): "
+				<< e.what() << std::endl;
+			std::terminate();
+		}catch(...){
+			std::cerr << "terminate with unknown exception in "
+				"stdlog.log_fn_error()" << std::endl;
+			std::terminate();
+		}
+
 		/// \brief Save exception message
 		void set_exception(std::exception const& error)noexcept try{
 			auto error_type_name = [&error]()->std::string{
@@ -142,16 +156,8 @@ namespace logsys{
 
 		/// \brief Forward every output to the message stream
 		template < typename T >
-		friend stdlog& operator<<(stdlog& log, T&& data)noexcept{
-			try{
-				log.os_ << static_cast< T&& >(data);
-			}catch(std::exception const& e){
-				std::cerr << "exception while log output: "
-					<< e.what() << std::endl;
-			}catch(...){
-				std::cerr << "unknown exception while log output"
-					<< std::endl;
-			}
+		friend stdlog& operator<<(stdlog& log, T&& data){
+			log.os_ << static_cast< T&& >(data);
 			return log;
 		}
 

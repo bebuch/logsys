@@ -11,6 +11,7 @@
 
 #include <boost/hana.hpp>
 
+#include <string_view>
 #include <optional>
 #include <memory>
 
@@ -102,23 +103,39 @@ namespace logsys{
 
 			if constexpr(has_pre){
 				static_assert(noexcept(log->pre()),
-					"In 'log([](Log& os){ ... })', 'os.pre()' must be a "
-					"nothrow callable expression.");
+					"In 'log([](Log& os){ ... })', 'os.pre()' must be "
+					"nothrow callable.");
 				log->pre();
 			}
 
-			f(*log);
+			static_assert(noexcept(log->log_fn_error(
+				std::declval< std::string_view >())),
+				"In 'log([](Log& os){ ... })', "
+				"'os.log_fn_error(std::string_view())' must be "
+				"nothrow callable.");
+
+			try{
+				f(*log);
+			}catch(std::exception const& e){
+				std::cerr << "exception while execution log function: "
+					<< e.what() << std::endl;
+				log->log_fn_error(e.what());
+			}catch(...){
+				std::cerr << "unknown exception while execution log function"
+					<< std::endl;
+				log->log_fn_error("unknown exception");
+			}
 
 			if constexpr(has_post){
 				static_assert(noexcept(log->post()),
-					"In 'log([](Log& os){ ... })', 'os.post()' must be a "
-					"nothrow callable expression.");
+					"In 'log([](Log& os){ ... })', 'os.post()' must be "
+					"nothrow callable.");
 				log->post();
 			}
 
 			static_assert(noexcept(log->exec()),
-				"In 'log([](Log& os){ ... })', 'os.exec()' must be a "
-				"nothrow callable expression.");
+				"In 'log([](Log& os){ ... })', 'os.exec()' must be "
+				"nothrow callable.");
 			log->exec();
 		}
 
@@ -145,8 +162,8 @@ namespace logsys{
 
 			if constexpr(has_failed){
 				static_assert(noexcept(log->failed()),
-					"In 'log([](Log& os){ ... })', 'os.failed()' must be a "
-					"nothrow callable expression.");
+					"In 'log([](Log& os){ ... })', 'os.failed()' must be "
+					"nothrow callable.");
 				log->failed();
 			}
 
@@ -226,7 +243,7 @@ namespace logsys{
 
 
 				static_assert(noexcept(Log::factory()),
-					"Log::factory() must be a nothrow callable expression.");
+					"Log::factory() must be nothrow callable.");
 
 				return Log::factory();
 			}else{
@@ -237,6 +254,12 @@ namespace logsys{
 		/// \brief Check if a type has a exec() function
 		constexpr auto has_exec = hana::is_valid(
 			[](auto& x)->decltype((void)x->exec()){}
+		);
+
+		/// \brief Check if a type has a log_fn_error(std::string_view) function
+		constexpr auto has_log_fn_error = hana::is_valid(
+			[](auto& x)->decltype((void)x->log_fn_error(
+				std::declval< std::string_view >())){}
 		);
 
 		/// \brief Check if a type has a have_body() function
@@ -267,6 +290,13 @@ namespace logsys{
 			"expression."
 		);
 
+		static_assert(
+			detail::has_log_fn_error(log),
+			"In 'log([](Log& os){ ... })', "
+			"'os.log_fn_error(std::string_view())' must be "
+			"a callable expression."
+		);
+
 		detail::exec_log(log_f, log);
 	}
 
@@ -293,10 +323,17 @@ namespace logsys{
 			"callable expression."
 		);
 
+		static_assert(
+			detail::has_log_fn_error(log),
+			"In 'log([](Log& os){ ... }, []{ ... })', "
+			"'os.log_fn_error(std::string_view())' must be "
+			"a callable expression."
+		);
+
 		if constexpr(detail::has_have_body(log)){
 			static_assert(noexcept(log->have_body()),
 				"In 'log([](Log& os){ ... })', 'os.have_body()' "
-				"must be a nothrow callable expression.");
+				"must be nothrow callable.");
 
 			log->have_body();
 		}
@@ -364,6 +401,13 @@ namespace logsys{
 		);
 
 		static_assert(
+			detail::has_log_fn_error(log),
+			"In 'exception_catching_log([](Log& os){ ... }, []{ ... })', "
+			"'os.log_fn_error(std::string_view())' must be "
+			"a callable expression."
+		);
+
+		static_assert(
 			has_set_exception(log),
 			"In 'exception_catching_log([](Log& os){ ... }, []{ ... })', "
 			"'os.set_exception(std::exception())' must be a "
@@ -380,16 +424,16 @@ namespace logsys{
 			noexcept(log->set_exception(std::declval< std::exception >())),
 			"In 'log([](Log& os){ ... })', "
 			"'os.set_exception(std::exception())' "
-			"must be a nothrow callable expression.");
+			"must be nothrow callable.");
 
 		static_assert(noexcept(log->unknown_exception()),
 			"In 'log([](Log& os){ ... })', 'os.unknown_exception()' "
-			"must be a nothrow callable expression.");
+			"must be nothrow callable.");
 
 		if constexpr(detail::has_have_body(log)){
 			static_assert(noexcept(log->have_body()),
 				"In 'log([](Log& os){ ... })', 'os.have_body()' "
-				"must be a nothrow callable expression.");
+				"must be nothrow callable.");
 			log->have_body();
 		}
 
