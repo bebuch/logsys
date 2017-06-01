@@ -66,7 +66,7 @@ namespace logsys{
 
 		/// \brief Output exception indicator
 		void post()noexcept try{
-			if(exception_) os_ << " (failed)";
+			if(exception_) os_ << " (FAILED)";
 			os_ << exception_text_;
 		}catch(std::exception const& e){
 			std::cerr << "terminate with exception in stdlog.post(): "
@@ -111,7 +111,7 @@ namespace logsys{
 				}
 			}();
 
-			exception_text_ = " (exception catched: [" + error_type_name + "] "
+			exception_text_ = " (EXCEPTION CATCHED: [" + error_type_name + "] "
 				+ error.what() + ")";
 		}catch(std::exception const& e){
 			std::cerr << "terminate with exception in stdlog.set_exception(): "
@@ -125,7 +125,7 @@ namespace logsys{
 
 		/// \brief Save text for unknown exception
 		void unknown_exception()noexcept try{
-			exception_text_ = " (unknown exception catched)";
+			exception_text_ = " (UNKNOWN EXCEPTION CATCHED)";
 		}catch(std::exception const& e){
 			std::cerr << "terminate with exception in "
 				"stdlog.unknown_exception(): " << e.what() << std::endl;
