@@ -157,7 +157,16 @@ namespace logsys{
 		/// \brief Forward every output to the message stream
 		template < typename T >
 		friend stdlog& operator<<(stdlog& log, T&& data){
-			log.os_ << static_cast< T&& >(data);
+			using type = std::remove_cv_t< std::remove_reference_t< T > >;
+			if constexpr(
+				std::is_same_v< type, char > ||
+				std::is_same_v< type, signed char > ||
+				std::is_same_v< type, unsigned char >
+			){
+				log.os_ << static_cast< int >(data);
+			}else{
+				log.os_ << static_cast< T&& >(data);
+			}
 			return log;
 		}
 
