@@ -18,7 +18,6 @@
 namespace logsys{ namespace detail{
 
 
-
 	/// \brief Extract type of Function parameter
 	template < typename Function >
 	struct extract_log: extract_log< decltype(&Function::operator()) >{};
@@ -264,18 +263,31 @@ namespace logsys{ namespace detail{
 	};
 
 
+	template < typename Log >
+	constexpr bool is_log_f =
+		is_valid< Log >([](auto& x)->decltype((void)
+			std::declval< extract_log_t< std::remove_reference_t< decltype(x) > > >()){});
+
+
 	/// \brief Output the log message
 	///
 	///   1. Call log->pre() if it exists
 	///   2. Call the log function: f(log)
 	///   3. Call log->post() if it exists
 	///   4. Call log->exec()
-	template < typename F, typename Log >
-	inline void exec_log(F& f, std::unique_ptr< Log >& log)noexcept{
+	template < typename F, typename Log, typename T = void >
+	inline void exec_log(
+		F& f, std::unique_ptr< Log >& log, T const* result = nullptr
+	)noexcept{
 		if constexpr(log_trait< Log >::has_pre){ log->pre(); }
 
 		try{
-			f(*log);
+			if constexpr(std::is_void_v< T >){
+				(void)result; // Silance GCC
+				f(*log);
+			}else{
+				f(*log, result);
+			}
 		}catch(std::exception const& e){
 			std::cerr << "ERROR: exception while executing log function: "
 				<< e.what() << std::endl;
@@ -301,12 +313,19 @@ namespace logsys{ namespace detail{
 	///       2. Call exec_log
 	///       3. rethrow the exception
 	template < typename LogF, typename Body, typename Log >
-	inline decltype(auto) exec_body(
+	inline decltype(auto) exec_body_with_log(
 		LogF&& log_f,
 		Body&& body,
 		std::unique_ptr< Log >& log
 	)try{
-		return body();
+		if constexpr(std::is_void_v< decltype(body()) >){
+			body();
+			exec_log(log_f, log);
+		}else{
+			decltype(auto) result = body();
+			exec_log(log_f, log);
+			return result;
+		}
 	}catch(...){
 		if constexpr(log_trait< Log >::has_body_failed){ log->failed(); }
 
@@ -315,6 +334,30 @@ namespace logsys{ namespace detail{
 		throw;
 	}
 
+	/// \brief Call the associated code block
+	///
+	///   - If no exception appears:
+	///       1. return with associated code block result
+	///   - If an exception appears:
+	///       1. Call log->failed() if it exists
+	///       2. Call exec_log
+	///       3. rethrow the exception
+	template < typename LogF, typename Body, typename Log >
+	inline decltype(auto) exec_body_with_result_log(
+		LogF&& log_f,
+		Body&& body,
+		std::unique_ptr< Log >& log
+	)try{
+		decltype(auto) result = body();
+		detail::exec_log(log_f, log, std::addressof(result));
+		return result;
+	}catch(...){
+		if constexpr(log_trait< Log >::has_body_failed){ log->failed(); }
+
+		exec_log(log_f, log, static_cast< decltype(body()) const* >(nullptr));
+
+		throw;
+	}
 
 	/// \brief Call the associated code block and catch exceptions
 	///
@@ -380,6 +423,17 @@ namespace logsys{ namespace detail{
 namespace logsys{
 
 
+	/// \brief Wrapper to imply the log class
+	template < typename Log >
+	struct type_t{
+		using type = Log;
+	};
+
+	template < typename Log >
+	constexpr type_t< Log > type{};
+
+
+
 	/// \brief Add a log message without associated code block
 	///
 	/// Usage Example:
@@ -389,6 +443,11 @@ namespace logsys{
 	/// \endcode
 	template < typename LogF >
 	inline void log(LogF&& log_f)noexcept{
+		static_assert(detail::is_log_f< LogF >,
+			"Can not extract Log type from first parameter of the log function."
+			"A valid log()-call without body must have the form: "
+			"'logsys::log([](Log&){});' where Log is your Log type.");
+
 		using log_t = detail::extract_log_t< LogF >;
 
 		auto log = detail::make_log< log_t >();
@@ -408,6 +467,13 @@ namespace logsys{
 	/// \endcode
 	template < typename LogF, typename Body >
 	inline decltype(auto) log(LogF&& log_f, Body&& body){
+		static_assert(detail::is_log_f< LogF >,
+			"Can not extract Log type from first parameter of the log function."
+			"A valid log()-call with body must have the form: "
+			"'logsys::log([](Log&){}, []{});' or "
+			"'logsys::log(logsys::type< Log >, [](Log&, auto const* value){}, "
+			"[]{ return value; });' where Log is your Log type.");
+
 		using log_t = detail::extract_log_t< LogF >;
 
 		auto log = detail::make_log< log_t >();
@@ -416,14 +482,37 @@ namespace logsys{
 			log->have_body();
 		}
 
-		if constexpr(std::is_void_v< decltype(body()) >){
-			detail::exec_body(log_f, body, log);
-			detail::exec_log(log_f, log);
-		}else{
-			decltype(auto) result = detail::exec_body(log_f, body, log);
-			detail::exec_log(log_f, log);
-			return result;
+		return detail::exec_body_with_log(log_f, body, log);
+	}
+
+	/// \brief Add a log message with associated code block
+	///
+	/// Usage Example:
+	///
+	/// \code{.cpp}
+	/// int result = log(logsys::type< your_log_tag_type >,
+	///     [](your_log_tag_type& os, int const* result){
+	///         os << "your message";
+	///         // output result if body did not throw
+	///         if(result != nullptr) os << ": " << *result;
+	///     }, []{
+	///         // your code
+	///         return 5;
+	///     });
+	/// \endcode
+	template < typename Log, typename LogF, typename Body >
+	inline decltype(auto) log(type_t< Log >, LogF&& log_f, Body&& body){
+		auto log = detail::make_log< Log >();
+
+		static_assert(!std::is_void_v< decltype(body()) >,
+			"return type must not be void, remove the 'type< Log >' parameter "
+			"from you log function call.");
+
+		if constexpr(detail::log_trait< Log >::has_have_body){
+			log->have_body();
 		}
+
+		return detail::exec_body_with_result_log(log_f, body, log);
 	}
 
 	/// \brief Catch all exceptions
@@ -453,6 +542,15 @@ namespace logsys{
 	/// \endcode
 	template < typename LogF, typename Body >
 	inline auto exception_catching_log(LogF&& log_f, Body&& body)noexcept{
+		static_assert(detail::is_log_f< LogF >,
+			"Can not extract Log type from first parameter of the "
+			"exception_catching_log function. A valid "
+			"exception_catching_log()-call must have the form: "
+			"'logsys::exception_catching_log([](Log&){}, []{});' or "
+			"'logsys::exception_catching_log(logsys::type< Log >, "
+			"[](Log&, auto const* value){}, []{ return value });' where Log is "
+			"your Log type.");
+
 		using log_t = detail::extract_log_t< LogF >;
 
 		auto log = detail::make_log< log_t >();
@@ -463,6 +561,47 @@ namespace logsys{
 
 		auto result = detail::exec_exception_catching_body(body, log);
 		detail::exec_log(log_f, log);
+		return result;
+	}
+
+	/// \brief Catch all exceptions
+	///
+	/// Call the function and catch all exceptions throwing by the function.
+	/// The name is emited via error_log together with the exception message.
+	///
+	/// As function the usage of a Lambda function is possible, which captures
+	/// all variables by reference. ([&]{/* ... */})
+	///
+	/// If the Lambda function does not return anything, result will be a bool,
+	/// indicating with false whether an exception appeared. Otherwise, the
+	/// result will be a type that is convertible to bool. If and only if the
+	/// conversion becomes true, accessability to the function result using
+	/// member-function result() is permitted. Otherwise, result() will throw
+	/// a std::logic_error.
+	///
+	/// Usage Example:
+	///
+	/// \code{.cpp}
+	/// std::optional< int > result = exception_catching_log(
+	///     [](your_log_tag_type& os){ os << "your message"; },
+	///     []{
+	///         // your code
+	///         return 5;
+	///     });
+	/// \endcode
+	template < typename Log, typename LogF, typename Body >
+	inline auto exception_catching_log(
+		type_t< Log >, LogF&& log_f, Body&& body
+	)noexcept{
+		auto log = detail::make_log< Log >();
+
+		if constexpr(detail::log_trait< Log >::has_have_body){
+			log->have_body();
+		}
+
+		auto result = detail::exec_exception_catching_body(body, log);
+		detail::exec_log(log_f, log,
+			result ? std::addressof(*result) : nullptr);
 		return result;
 	}
 
