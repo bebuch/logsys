@@ -9,267 +9,368 @@
 #ifndef _logsys__log__hpp_INCLUDED_
 #define _logsys__log__hpp_INCLUDED_
 
-#include <boost/hana.hpp>
-
 #include <string_view>
 #include <optional>
 #include <iostream>
 #include <memory>
 
 
-namespace logsys{
+namespace logsys{ namespace detail{
 
 
-	namespace detail{
+	/// \brief Implementation of extract_log_t
+	template < typename Function >
+	struct extract_log_from_function;
+
+	/// \brief Implementation of extract_log_t
+	template < typename F, typename R, typename Log >
+	struct extract_log_from_function< R(F::*)(Log&) >{
+		using type = Log;
+	};
+
+	/// \brief Implementation of extract_log_t
+	template < typename F, typename R, typename Log >
+	struct extract_log_from_function< R(F::*)(Log&)const >{
+		using type = Log;
+	};
+
+	/// \brief Implementation of extract_log_t
+	template < typename F, typename R, typename Log >
+	struct extract_log_from_function< R(F::*)(Log&)volatile >{
+		using type = Log;
+	};
+
+	/// \brief Implementation of extract_log_t
+	template < typename F, typename R, typename Log >
+	struct extract_log_from_function< R(F::*)(Log&)volatile const >{
+		using type = Log;
+	};
+
+	/// \brief Extract type of first Function parameter
+	template < typename Function >
+	struct extract_log{
+		using type =
+			typename extract_log_from_function<
+				decltype(&Function::operator())
+			>::type;
+	};
+
+	/// \brief Implementation of extract_log_t
+	template < typename Function >
+	struct extract_log< Function& >{
+		using type = typename extract_log< Function >::type;
+	};
+
+	/// \brief Implementation of extract_log_t
+	template < typename Log, typename R >
+	struct extract_log< R(Log&) >{
+		using type = Log;
+	};
+
+	/// \brief Implementation of extract_log_t
+	template < typename Log, typename R >
+	struct extract_log< R(*)(Log&) >{
+		using type = Log;
+	};
+
+	/// \copydoc extract_log
+	template < typename Function >
+	using extract_log_t = typename extract_log< Function >::type;
 
 
-		namespace hana = boost::hana;
+	/// \brief Implementation of is_valid_t
+	template < typename F, typename Log, typename =
+		decltype(std::declval< F&& >()(std::declval< Log& >())) >
+	constexpr bool is_valid_impl(int){ return true; }
+
+	/// \brief Implementation of is_valid_t
+	template < typename F, typename Log >
+	constexpr bool is_valid_impl(...){ return false; }
+
+	/// \brief SFINAE expression evaluartor, use lambda return type definition
+	template < typename Log >
+	struct is_valid_t{
+		template < typename F >
+		constexpr bool operator()(F&&)const
+		{ return is_valid_impl< F, Log& >(int{}); }
+	};
+
+	/// \copydoc is_valid_t
+	template < typename Log >
+	constexpr is_valid_t< Log > is_valid{};
 
 
-		/// \brief Implementation of extract_log_t
-		template < typename Function >
-		struct extract_log_from_function;
+	/// \brief Type trait for log types
+	template < typename Log >
+	struct log_trait{
+		/// \brief true if Log has a exec member function without arguments,
+		///        otherwise false
+		static constexpr bool has_exec = is_valid< Log >(
+			[](auto& x)->decltype((void)x.exec()){});
 
-		/// \brief Implementation of extract_log_t
-		template < typename F, typename R, typename Log >
-		struct extract_log_from_function< R(F::*)(Log&) >{
-			using type = Log;
-		};
+		static_assert(has_exec,
+			"Log has no member function .exec().");
 
-		/// \brief Implementation of extract_log_t
-		template < typename F, typename R, typename Log >
-		struct extract_log_from_function< R(F::*)(Log&)const >{
-			using type = Log;
-		};
+		/// \brief true if exec() is nothrow callable, false otherwise
+		static constexpr bool is_exec_noexcept =
+			noexcept(std::declval< Log >().exec());
 
-		/// \brief Implementation of extract_log_t
-		template < typename F, typename R, typename Log >
-		struct extract_log_from_function< R(F::*)(Log&)volatile >{
-			using type = Log;
-		};
-
-		/// \brief Implementation of extract_log_t
-		template < typename F, typename R, typename Log >
-		struct extract_log_from_function< R(F::*)(Log&)volatile const >{
-			using type = Log;
-		};
-
-		/// \brief Extract type of first Function parameter
-		template < typename Function >
-		struct extract_log{
-			using type =
-				typename extract_log_from_function<
-					decltype(&Function::operator())
-				>::type;
-		};
-
-		/// \brief Implementation of extract_log_t
-		template < typename Function >
-		struct extract_log< Function& >{
-			using type = typename extract_log< Function >::type;
-		};
-
-		/// \brief Implementation of extract_log_t
-		template < typename Log, typename R >
-		struct extract_log< R(Log&) >{
-			using type = Log;
-		};
-
-		/// \brief Implementation of extract_log_t
-		template < typename Log, typename R >
-		struct extract_log< R(*)(Log&) >{
-			using type = Log;
-		};
-
-		/// \copydoc extract_log
-		template < typename Function >
-		using extract_log_t = typename extract_log< Function >::type;
+		static_assert(is_exec_noexcept,
+			"Log member function .exec() must be nothrow callable.");
 
 
-		/// \brief Output the log message
-		///
-		///   1. Call log->pre() if it exists
-		///   2. Call the log function: f(log)
-		///   3. Call log->post() if it exists
-		///   4. Call log->exec()
-		template < typename F, typename Log >
-		inline void exec_log(F& f, std::unique_ptr< Log >& log)noexcept{
-			auto has_pre = hana::is_valid(
-					[](auto& x)->decltype((void)x->pre()){}
-				)(log);
+		/// \brief true if Log has a set_exception member function with one
+		///        lvalue argument of type std::exception, otherwise false
+		static constexpr bool has_set_exception = is_valid< Log >(
+			[](auto& x)->decltype(
+				(void)x.set_exception(std::declval< std::exception const& >())
+			){});
 
-			auto has_post = hana::is_valid(
-					[](auto& x)->decltype((void)x->post()){}
-				)(log);
+		static_assert(has_set_exception,
+			"Log has no member function "
+			".set_exception(std::exception const&).");
 
+		/// \brief true if set_exception() is nothrow callable, false otherwise
+		static constexpr bool is_set_exception_noexcept =
+			noexcept(std::declval< Log >()
+				.set_exception(std::declval< std::exception const& >()));
+
+		static_assert(is_set_exception_noexcept,
+			"Log member function .set_exception() must be nothrow callable.");
+
+
+		/// \brief true if Log has a unknown_exception member function without
+		///        arguments, otherwise false
+		static constexpr bool has_unknown_exception = is_valid< Log >(
+			[](auto& x)->decltype((void)x.unknown_exception()){});
+
+		static_assert(has_unknown_exception,
+			"Log has no member function .unknown_exception().");
+
+		/// \brief true if unknown_exception() is nothrow callable, false
+		///        otherwise
+		static constexpr bool is_unknown_exception_noexcept =
+			noexcept(std::declval< Log >().unknown_exception());
+
+		static_assert(is_unknown_exception_noexcept,
+			"Log member function .unknown_exception() must be nothrow "
+			"callable.");
+
+
+		/// \brief true if Log has a pre member function without arguments,
+		///        otherwise false
+		static constexpr bool has_pre = is_valid< Log >(
+			[](auto& x)->decltype((void)x.pre()){});
+
+		/// \brief true if has_pre is false, or pre() is nothrow callable,
+		///        false otherwise
+		static constexpr bool is_pre_noexcept = []{
 			if constexpr(has_pre){
-				static_assert(noexcept(log->pre()),
-					"In 'log([](Log& os){ ... })', 'os.pre()' must be "
-					"nothrow callable.");
-				log->pre();
-			}
+				return noexcept(std::declval< Log >().pre());
+			}else{ return true; } }();
 
-			static_assert(noexcept(log->log_fn_error(
-				std::declval< std::string_view >())),
-				"In 'log([](Log& os){ ... })', "
-				"'os.log_fn_error(std::string_view())' must be "
-				"nothrow callable.");
+		static_assert(is_pre_noexcept,
+			"Log member function .pre() must be nothrow callable.");
 
-			try{
-				f(*log);
-			}catch(std::exception const& e){
-				std::cerr << "exception while execution log function: "
-					<< e.what() << std::endl;
-				log->log_fn_error(e.what());
-			}catch(...){
-				std::cerr << "unknown exception while execution log function"
-					<< std::endl;
-				log->log_fn_error("unknown exception");
-			}
 
+		/// \brief true if Log has a post member function without arguments,
+		///        otherwise false
+		static constexpr bool has_post = is_valid< Log >(
+			[](auto& x)->decltype((void)x.post()){});
+
+		/// \brief true if has_post is false, or post() is nothrow callable,
+		///        false otherwise
+		static constexpr bool is_post_noexcept = []{
 			if constexpr(has_post){
-				static_assert(noexcept(log->post()),
-					"In 'log([](Log& os){ ... })', 'os.post()' must be "
-					"nothrow callable.");
-				log->post();
-			}
+				return noexcept(std::declval< Log >().post());
+			}else{ return true; } }();
 
-			static_assert(noexcept(log->exec()),
-				"In 'log([](Log& os){ ... })', 'os.exec()' must be "
-				"nothrow callable.");
-			log->exec();
-		}
+		static_assert(is_post_noexcept,
+			"Log member function .post() must be nothrow callable.");
 
 
-		/// \brief Call the associated code block
-		///
-		///   - If no exception appears:
-		///       1. return with associated code block result
-		///   - If an exception appears:
-		///       1. Call log->failed() if it exists
-		///       2. Call exec_log
-		///       3. rethrow the exception
-		template < typename LogF, typename Body, typename Log >
-		inline decltype(auto) exec_body(
-			LogF&& log_f,
-			Body&& body,
-			std::unique_ptr< Log >& log
-		)try{
-			return body();
+		/// \brief true if Log has a body_failed member function without
+		///        arguments, otherwise false
+		static constexpr bool has_body_failed = is_valid< Log >(
+			[](auto& x)->decltype((void)x.body_failed()){});
+
+		/// \brief true if has_body_failed is false, or body_failed() is
+		///        nothrow callable, false otherwise
+		static constexpr bool is_body_failed_noexcept = []{
+			if constexpr(has_body_failed){
+				return noexcept(std::declval< Log >().body_failed());
+			}else{ return true; } }();
+
+		static_assert(is_body_failed_noexcept,
+			"Log member function .body_failed() must be nothrow callable.");
+
+
+		/// \brief true if Log has a have_body member function
+		///        without arguments, otherwise false
+		static constexpr bool has_have_body = is_valid< Log >(
+			[](auto& x)->decltype((void)x.have_body()){});
+
+		/// \brief true if has_have_body is false, or have_body() is nothrow
+		///        callable, false otherwise
+		static constexpr bool is_have_body_noexcept = []{
+			if constexpr(has_have_body){
+				return noexcept(std::declval< Log >().have_body());
+			}else{ return true; } }();
+
+		static_assert(is_have_body_noexcept,
+			"Log member function .have_body() must be nothrow callable.");
+
+
+		/// \brief true if Log has a static factory function without arguments
+		///        returning a std::unique_ptr< Log >, otherwise false
+		static constexpr bool has_factory = is_valid< Log >(
+			[](auto& x)->decltype((void)
+				std::remove_reference_t< decltype(x) >::factory()){});
+
+		/// \brief true if has_factory is false, or factory() return a
+		///        std::unique_ptr< Log >, false otherwise
+		static constexpr bool has_factory_valid_return_type = []{
+			if constexpr(has_factory){
+				return is_valid< Log >([](auto& x)->decltype(
+					static_cast< std::unique_ptr< Log > >(Log::factory())){});
+			}else{ return true; } }();
+
+		static_assert(has_factory_valid_return_type,
+			"static Log member function ::factory() must return a "
+			"std::unique_ptr< Log >.");
+
+		/// \brief true if has_factory is false, or factory() is nothrow
+		///        callable, false otherwise
+		static constexpr bool is_factory_noexcept = []{
+			if constexpr(has_factory){
+				return noexcept(std::declval< Log >().factory());
+			}else{ return true; } }();
+
+		static_assert(is_factory_noexcept,
+			"static Log member function ::factory() must be nothrow callable.");
+
+
+		static_assert(has_factory ||
+			std::is_nothrow_default_constructible_v< Log >,
+			"Log must either have a static member function ::factory() or "
+			"be nothrow default constructible");
+	};
+
+
+	/// \brief Output the log message
+	///
+	///   1. Call log->pre() if it exists
+	///   2. Call the log function: f(log)
+	///   3. Call log->post() if it exists
+	///   4. Call log->exec()
+	template < typename F, typename Log >
+	inline void exec_log(F& f, std::unique_ptr< Log >& log)noexcept{
+		if constexpr(log_trait< Log >::has_pre){ log->pre(); }
+
+		try{
+			f(*log);
+		}catch(std::exception const& e){
+			std::cerr << "ERROR: exception while executing log function: "
+				<< e.what() << std::endl;
+			*log << "<EXCEPTION WHILE LOGGING: " << e.what() << ">";
 		}catch(...){
-			auto has_failed = hana::is_valid(
-					[](auto& x)->decltype((void)x->failed()){}
-				)(log);
-
-			if constexpr(has_failed){
-				static_assert(noexcept(log->failed()),
-					"In 'log([](Log& os){ ... })', 'os.failed()' must be "
-					"nothrow callable.");
-				log->failed();
-			}
-
-			exec_log(log_f, log);
-
-			throw;
+			std::cerr << "ERROR: unknown exception while executing log function"
+				<< std::endl;
+			*log << "<EXCEPTION WHILE LOGGING: unknown exception>";
 		}
 
+		if constexpr(log_trait< Log >::has_post){ log->post(); }
 
-		/// \brief Call the associated code block and catch exceptions
-		///
-		///   - If no exception appears:
-		///       1. return with associated code block result as std::optional
-		///   - If an exception appears:
-		///       1. exception is derived from std::exception
-		///           - yes: Call log->set_exception(exception)
-		///           - no: Call log->unknown_exception()
-		///       2. return with an empty std::optional
-		template < typename Body, typename Log >
-		inline auto exec_exception_catching_body(
-			Body&& body,
-			std::unique_ptr< Log >& log
-		)noexcept{
-			constexpr auto is_void = std::is_void_v< decltype(body()) >;
-
-			using body_type = decltype(body());
-			using return_type = std::conditional_t<
-				std::is_reference_v< body_type >,
-				std::reference_wrapper< std::remove_reference_t< body_type > >,
-				body_type >;
-
-			try{
-				if constexpr(is_void){
-					body();
-					return true;
-				}else{
-					return std::optional< return_type >(body());
-				}
-			}catch(std::exception const& error){
-				log->set_exception(error);
-			}catch(...){
-				log->unknown_exception();
-			}
-
-			if constexpr(is_void){
-				return false;
-			}else{
-				return std::optional< return_type >();
-			}
-		}
-
-
-		template < typename T >
-		struct is_unique_ptr: std::false_type{};
-
-		template < typename T >
-		struct is_unique_ptr< std::unique_ptr< T > >: std::true_type{};
-
-		template < typename T >
-		constexpr bool is_unique_ptr_v = is_unique_ptr< T >::value;
-
-
-		/// \brief Construct a new log object
-		///
-		///   - Log::factory exists
-		///       - yes: construct by calling Log::factory()
-		///       - no: construct by calling standard constructor
-		template < typename Log >
-		auto make_log()noexcept{
-			constexpr auto has_factory = hana::is_valid(
-				[](auto t)->decltype((void)decltype(t)::type::factory()){}
-			);
-
-			if constexpr(has_factory(hana::type_c< Log >)){
-				static_assert(is_unique_ptr_v< decltype(Log::factory()) >,
-					"Log::factory() must return a std::unique_ptr");
-
-
-				static_assert(noexcept(Log::factory()),
-					"Log::factory() must be nothrow callable.");
-
-				return Log::factory();
-			}else{
-				return std::unique_ptr< Log >();
-			}
-		}
-
-		/// \brief Check if a type has a exec() function
-		constexpr auto has_exec = hana::is_valid(
-			[](auto& x)->decltype((void)x->exec()){}
-		);
-
-		/// \brief Check if a type has a log_fn_error(std::string_view) function
-		constexpr auto has_log_fn_error = hana::is_valid(
-			[](auto& x)->decltype((void)x->log_fn_error(
-				std::declval< std::string_view >())){}
-		);
-
-		/// \brief Check if a type has a have_body() function
-		constexpr auto has_have_body = hana::is_valid(
-			[](auto& x)->decltype((void)x->have_body()){}
-		);
-
-
+		log->exec();
 	}
+
+
+	/// \brief Call the associated code block
+	///
+	///   - If no exception appears:
+	///       1. return with associated code block result
+	///   - If an exception appears:
+	///       1. Call log->failed() if it exists
+	///       2. Call exec_log
+	///       3. rethrow the exception
+	template < typename LogF, typename Body, typename Log >
+	inline decltype(auto) exec_body(
+		LogF&& log_f,
+		Body&& body,
+		std::unique_ptr< Log >& log
+	)try{
+		return body();
+	}catch(...){
+		if constexpr(log_trait< Log >::has_body_failed){ log->failed(); }
+
+		exec_log(log_f, log);
+
+		throw;
+	}
+
+
+	/// \brief Call the associated code block and catch exceptions
+	///
+	///   - If no exception appears:
+	///       1. return with associated code block result as std::optional
+	///   - If an exception appears:
+	///       1. exception is derived from std::exception
+	///           - yes: Call log->set_exception(exception)
+	///           - no: Call log->unknown_exception()
+	///       2. return with an empty std::optional
+	template < typename Body, typename Log >
+	inline auto exec_exception_catching_body(
+		Body&& body,
+		std::unique_ptr< Log >& log
+	)noexcept{
+		using body_type = decltype(body());
+		constexpr auto is_void = std::is_void_v< body_type >;
+
+		using return_type = std::conditional_t<
+			std::is_reference_v< body_type >,
+			std::reference_wrapper< std::remove_reference_t< body_type > >,
+			body_type >;
+
+		try{
+			if constexpr(is_void){
+				body();
+				return true;
+			}else{
+				return std::optional< return_type >(body());
+			}
+		}catch(std::exception const& error){
+			log->set_exception(error);
+		}catch(...){
+			log->unknown_exception();
+		}
+
+		if constexpr(is_void){
+			return false;
+		}else{
+			return std::optional< return_type >();
+		}
+	}
+
+
+	/// \brief Construct a new log object
+	///
+	///   - Log::factory exists
+	///       - yes: construct by calling Log::factory()
+	///       - no: construct by calling standard constructor
+	template < typename Log >
+	auto make_log()noexcept{
+		if constexpr(log_trait< Log >::has_factory){
+			return Log::factory();
+		}else{
+			return std::unique_ptr< Log >();
+		}
+	}
+
+
+} }
+
+
+namespace logsys{
 
 
 	/// \brief Add a log message without associated code block
@@ -284,19 +385,6 @@ namespace logsys{
 		using log_t = detail::extract_log_t< LogF >;
 
 		auto log = detail::make_log< log_t >();
-
-		static_assert(
-			detail::has_exec(log),
-			"In 'log([](Log& os){ ... })', 'os.exec()' must be a callable "
-			"expression."
-		);
-
-		static_assert(
-			detail::has_log_fn_error(log),
-			"In 'log([](Log& os){ ... })', "
-			"'os.log_fn_error(std::string_view())' must be "
-			"a callable expression."
-		);
 
 		detail::exec_log(log_f, log);
 	}
@@ -313,33 +401,15 @@ namespace logsys{
 	/// \endcode
 	template < typename LogF, typename Body >
 	inline decltype(auto) log(LogF&& log_f, Body&& body){
-		namespace hana = boost::hana;
-
 		using log_t = detail::extract_log_t< LogF >;
 
 		auto log = detail::make_log< log_t >();
 
-		static_assert(detail::has_exec(log),
-			"In 'log([](Log& os){ ... }, []{ ... })', 'os.exec()' must be a "
-			"callable expression."
-		);
-
-		static_assert(
-			detail::has_log_fn_error(log),
-			"In 'log([](Log& os){ ... }, []{ ... })', "
-			"'os.log_fn_error(std::string_view())' must be "
-			"a callable expression."
-		);
-
-		if constexpr(detail::has_have_body(log)){
-			static_assert(noexcept(log->have_body()),
-				"In 'log([](Log& os){ ... })', 'os.have_body()' "
-				"must be nothrow callable.");
-
+		if constexpr(detail::log_trait< log_t >::has_have_body){
 			log->have_body();
 		}
 
-		if constexpr(hana::traits::is_void(hana::type_c< decltype(body()) >)){
+		if constexpr(std::is_void_v< decltype(body()) >){
 			detail::exec_body(log_f, body, log);
 			detail::exec_log(log_f, log);
 		}else{
@@ -376,65 +446,11 @@ namespace logsys{
 	/// \endcode
 	template < typename LogF, typename Body >
 	inline auto exception_catching_log(LogF&& log_f, Body&& body)noexcept{
-		namespace hana = boost::hana;
-
 		using log_t = detail::extract_log_t< LogF >;
-
-
-		constexpr auto has_set_exception = hana::is_valid(
-			[](auto& x)->decltype(
-				(void)x->set_exception(std::declval< std::exception >())
-			){}
-		);
-
-		constexpr auto has_unknown_exception = hana::is_valid(
-			[](auto& x)->decltype((void)x->unknown_exception()){}
-		);
-
 
 		auto log = detail::make_log< log_t >();
 
-
-		static_assert(
-			detail::has_exec(log),
-			"In 'exception_catching_log([](Log& os){ ... }, []{ ... })', "
-			"'os.exec()' must be a callable expression."
-		);
-
-		static_assert(
-			detail::has_log_fn_error(log),
-			"In 'exception_catching_log([](Log& os){ ... }, []{ ... })', "
-			"'os.log_fn_error(std::string_view())' must be "
-			"a callable expression."
-		);
-
-		static_assert(
-			has_set_exception(log),
-			"In 'exception_catching_log([](Log& os){ ... }, []{ ... })', "
-			"'os.set_exception(std::exception())' must be a "
-			"callable expression."
-		);
-
-		static_assert(
-			has_unknown_exception(log),
-			"In 'exception_catching_log([](Log& os){ ... }, []{ ... })', "
-			"'os.unknown_exception()' must be a callable expression."
-		);
-
-		static_assert(
-			noexcept(log->set_exception(std::declval< std::exception >())),
-			"In 'log([](Log& os){ ... })', "
-			"'os.set_exception(std::exception())' "
-			"must be nothrow callable.");
-
-		static_assert(noexcept(log->unknown_exception()),
-			"In 'log([](Log& os){ ... })', 'os.unknown_exception()' "
-			"must be nothrow callable.");
-
-		if constexpr(detail::has_have_body(log)){
-			static_assert(noexcept(log->have_body()),
-				"In 'log([](Log& os){ ... })', 'os.have_body()' "
-				"must be nothrow callable.");
+		if constexpr(detail::log_trait< log_t >::has_have_body){
 			log->have_body();
 		}
 

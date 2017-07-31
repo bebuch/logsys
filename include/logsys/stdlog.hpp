@@ -83,20 +83,6 @@ namespace logsys{
 			exception_ = true;
 		}
 
-
-		/// \brief Called if an exception has been thrown in the log function
-		void log_fn_error(std::string_view message)noexcept try{
-			os_ << "[!!EXCEPTION IN LOG FUNCTION: " << message << "!!]";
-		}catch(std::exception const& e){
-			std::cerr << "terminate with exception in stdlog.log_fn_error(): "
-				<< e.what() << std::endl;
-			std::terminate();
-		}catch(...){
-			std::cerr << "terminate with unknown exception in "
-				"stdlog.log_fn_error()" << std::endl;
-			std::terminate();
-		}
-
 		/// \brief Save exception message
 		void set_exception(std::exception const& error)noexcept try{
 			auto error_type_name = [&error]()->std::string{
