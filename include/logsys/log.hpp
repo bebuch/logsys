@@ -18,41 +18,12 @@
 namespace logsys{ namespace detail{
 
 
-	/// \brief Implementation of extract_log_t
-	template < typename Function >
-	struct extract_log_from_function;
 
-	/// \brief Implementation of extract_log_t
-	template < typename F, typename R, typename Log >
-	struct extract_log_from_function< R(F::*)(Log&) >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename F, typename R, typename Log >
-	struct extract_log_from_function< R(F::*)(Log&)const >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename F, typename R, typename Log >
-	struct extract_log_from_function< R(F::*)(Log&)volatile >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename F, typename R, typename Log >
-	struct extract_log_from_function< R(F::*)(Log&)volatile const >{
-		using type = Log;
-	};
-
-	/// \brief Extract type of first Function parameter
+	/// \brief Extract type of Function parameter
 	template < typename Function >
 	struct extract_log{
 		using type =
-			typename extract_log_from_function<
-				decltype(&Function::operator())
-			>::type;
+			typename extract_log< decltype(&Function::operator()) >::type;
 	};
 
 	/// \brief Implementation of extract_log_t
@@ -69,9 +40,53 @@ namespace logsys{ namespace detail{
 
 	/// \brief Implementation of extract_log_t
 	template < typename Log, typename R >
+	struct extract_log< R(&)(Log&) >{
+		using type = Log;
+	};
+
+	/// \brief Implementation of extract_log_t
+	template < typename Log, typename R >
 	struct extract_log< R(*)(Log&) >{
 		using type = Log;
 	};
+
+#ifdef __cpp_noexcept_function_type
+	/// \brief Implementation of extract_log_t
+	template < typename F, typename R, typename Log >
+	struct extract_log< R(F::*)(Log&)noexcept(false) >{
+		using type = Log;
+	};
+
+	/// \brief Implementation of extract_log_t
+	template < typename F, typename R, typename Log >
+	struct extract_log< R(F::*)(Log&)const noexcept(false) >{
+		using type = Log;
+	};
+
+	/// \brief Implementation of extract_log_t
+	template < typename F, typename R, typename Log >
+	struct extract_log< R(F::*)(Log&)noexcept(true) >{
+		using type = Log;
+	};
+
+	/// \brief Implementation of extract_log_t
+	template < typename F, typename R, typename Log >
+	struct extract_log< R(F::*)(Log&)const noexcept(true) >{
+		using type = Log;
+	};
+#else
+	/// \brief Implementation of extract_log_t
+	template < typename F, typename R, typename Log >
+	struct extract_log< R(F::*)(Log&) >{
+		using type = Log;
+	};
+
+	/// \brief Implementation of extract_log_t
+	template < typename F, typename R, typename Log >
+	struct extract_log< R(F::*)(Log&) const >{
+		using type = Log;
+	};
+#endif
 
 	/// \copydoc extract_log
 	template < typename Function >

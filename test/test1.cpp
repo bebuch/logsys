@@ -31,18 +31,6 @@ struct fo2{
 	}
 };
 
-struct fo3{
-	void operator()(stdlogb& os)volatile{
-		os << "struct volatile";
-	}
-};
-
-struct fo4{
-	void operator()(stdlogb& os)const volatile{
-		os << "struct const volatile";
-	}
-};
-
 
 void f(stdlogb& os){
 	os << "f";
@@ -89,8 +77,6 @@ int main(){
 	logsys::log([](stdlogb& os){ os << "lambda"; });
 	logsys::log(fo1());
 	logsys::log(fo2());
-	logsys::log(fo3());
-	logsys::log(fo4());
 	logsys::log(f);
 	logsys::log(&fp);
 	logsys::log(p);
