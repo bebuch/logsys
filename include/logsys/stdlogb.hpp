@@ -63,6 +63,7 @@ namespace logsys{
 		/// Output your log message now.
 		virtual void exec()const noexcept{}
 
+
 		/// \brief Output operator overload
 		template < typename T >
 		friend stdlogb& operator<<(stdlogb& log, T&& data){
