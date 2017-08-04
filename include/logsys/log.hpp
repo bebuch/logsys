@@ -17,7 +17,7 @@
 #include <memory>
 
 
-namespace logsys{ namespace detail{
+namespace logsys::detail{
 
 
 	/// \brief Extract type of Function parameter
@@ -471,7 +471,7 @@ namespace logsys{ namespace detail{
 	}
 
 
-} }
+}
 
 
 namespace logsys{
