@@ -55,3 +55,9 @@ exe test1
 	test1.cpp
 	/logsys//logsys
 	;
+
+exe is_valid
+	:
+	is_valid.cpp
+	/logsys//logsys
+	;
