@@ -289,8 +289,11 @@ namespace logsys::detail{
 		///        std::unique_ptr< Log >, false otherwise
 		static constexpr bool has_factory_valid_return_type = []{
 			if constexpr(has_factory){
-				return is_valid< Log >([](auto& x)->decltype(
-					static_cast< std::unique_ptr< Log > >(Log::factory())){});
+				return is_valid< Log >([](auto& x)->decltype((void)
+					static_cast< std::unique_ptr<
+						std::remove_reference_t< decltype(x) > > >(
+							std::remove_reference_t< decltype(x) >::factory()
+						)){});
 			}else{ return true; } }();
 
 		static_assert(has_factory_valid_return_type,
