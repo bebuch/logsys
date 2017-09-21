@@ -47,7 +47,7 @@ namespace logsys{
 		virtual void post()noexcept{}
 
 		/// \brief Called after post() if an exception is active
-		virtual void failed()noexcept{}
+		virtual void body_failed()noexcept{}
 
 		/// \brief Called if an std::exception derived is active
 		virtual void set_exception(std::exception const&)noexcept{}

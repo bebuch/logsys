@@ -29,9 +29,9 @@ namespace logsys{
 			stdlog::post();
 		}
 
-		/// \copydoc stdlog::failed()
-		void failed()noexcept override{
-			stdlog::failed();
+		/// \copydoc stdlog::body_failed()
+		void body_failed()noexcept override{
+			stdlog::body_failed();
 		}
 
 		/// \copydoc stdlog::set_exception()

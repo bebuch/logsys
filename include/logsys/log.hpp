@@ -380,7 +380,7 @@ namespace logsys::detail{
 	///   - If no exception appears:
 	///       1. return with associated code block result
 	///   - If an exception appears:
-	///       1. Call log->failed() if it exists
+	///       1. Call log->body_failed() if it exists
 	///       2. Call exec_log
 	///       3. rethrow the exception
 	template < typename LogF, typename Body, typename Log >
@@ -404,7 +404,7 @@ namespace logsys::detail{
 			return result;
 		}
 	}catch(...){
-		if constexpr(log_trait< Log >::has_body_failed){ log->failed(); }
+		if constexpr(log_trait< Log >::has_body_failed){ log->body_failed(); }
 
 		if constexpr(is_simple_log_f< LogF, Log >){
 			exec_log(log_f, log);

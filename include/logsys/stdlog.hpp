@@ -79,7 +79,7 @@ namespace logsys{
 		}
 
 		/// \brief Set exception indicator to true
-		void failed()noexcept{
+		void body_failed()noexcept{
 			exception_ = true;
 		}
 
