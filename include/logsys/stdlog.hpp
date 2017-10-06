@@ -15,6 +15,7 @@
 #include <boost/type_index.hpp>
 
 #include <atomic>
+#include <iomanip>
 
 
 namespace logsys{
@@ -35,7 +36,7 @@ namespace logsys{
 			exception_(false),
 			id_(unique_id()),
 			start_(std::chrono::system_clock::now())
-			{}
+			{ os_ << std::boolalpha; }
 
 		/// \brief Output ID and time block
 		void pre()noexcept try{
