@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2015-2017 Benjamin Buch
+// Copyright (c) 2015-2018 Benjamin Buch
 //
 // https://github.com/bebuch/logsys
 //
@@ -8,6 +8,8 @@
 //-----------------------------------------------------------------------------
 #ifndef _logsys__log__hpp_INCLUDED_
 #define _logsys__log__hpp_INCLUDED_
+
+#include "is_valid.hpp"
 
 #include <string_view>
 #include <type_traits>
@@ -134,28 +136,6 @@ namespace logsys::detail{
 	/// \brief Extract type of first parameter from log function
 	template < typename Function >
 	using extract_log_t = typename extract_log< Function >::type;
-
-
-	/// \brief Implementation of is_valid_t
-	template < typename F, typename Log, typename =
-		decltype(std::declval< F&& >()(std::declval< Log& >())) >
-	constexpr bool is_valid_impl(int){ return true; }
-
-	/// \brief Implementation of is_valid_t
-	template < typename F, typename Log >
-	constexpr bool is_valid_impl(...){ return false; }
-
-	/// \brief SFINAE expression evaluartor, use lambda return type definition
-	template < typename Log >
-	struct is_valid_t{
-		template < typename F >
-		constexpr bool operator()(F&&)const
-		{ return is_valid_impl< F, Log& >(int{}); }
-	};
-
-	/// \copydoc is_valid_t
-	template < typename Log >
-	constexpr is_valid_t< Log > is_valid{};
 
 
 	/// \brief Type trait for log types
