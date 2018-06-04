@@ -7,22 +7,15 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include <logsys/stdlogb_factory_object.hpp>
-#include <logsys/stdlogb.hpp>
+#include <logsys/stdlogd.hpp>
 
 
 namespace logsys{
 
 
-	std::unique_ptr< stdlogb > stdlogb::factory()noexcept try{
-		return stdlogb_factory_object();
-	}catch(std::exception const& e){
-		std::cerr << "terminate with exception in stdlogb factory: "
-			<< e.what() << '\n';
-		std::terminate();
-	}catch(...){
-		std::cerr << "terminate with unknown exception in stdlogb factory\n";
-		std::terminate();
-	}
+	std::function< std::unique_ptr< stdlogb >() > stdlogb_factory_object(
+		[](){ return std::make_unique< stdlogd >(); }
+	);
 
 
 }

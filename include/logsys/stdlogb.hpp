@@ -11,7 +11,6 @@
 
 #include <iostream>
 #include <memory>
-#include <functional>
 
 
 namespace logsys{
@@ -20,21 +19,13 @@ namespace logsys{
 	/// \brief Base class for dynamic log tag classes
 	class stdlogb{
 	public:
-		/// \brief Assign your log object maker to this variable
-		static std::function< std::unique_ptr< stdlogb >() > factory_object;
-
-		static std::unique_ptr< stdlogb > factory()noexcept try{
-			return factory_object();
-		}catch(std::exception const& e){
-			std::cerr << "terminate with exception in stdlogb factory: "
-				<< e.what() << std::endl;
-			std::terminate();
-		}catch(...){
-			std::cerr << "terminate with unknown exception in stdlogb factory"
-				<< std::endl;
-			std::terminate();
-		}
-
+		/// \brief Create a stdlogb derived log object
+		///
+		/// There are two ways to use this function:
+		///   1. You can just include the header and write your own definition.
+		///   2. You can link agains logsys/liblogsys.so and assign your log
+		///      object creater function to stdlogb_factory_object.
+		static std::unique_ptr< stdlogb > factory()noexcept;
 
 		/// \brief Destructor
 		virtual ~stdlogb()noexcept{}

@@ -6,23 +6,23 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include <logsys/stdlogb_factory_object.hpp>
-#include <logsys/stdlogb.hpp>
+#ifndef _logsys__stdlogb_factory_object__hpp_INCLUDED_
+#define _logsys__stdlogb_factory_object__hpp_INCLUDED_
+
+#include <memory>
+#include <functional>
 
 
 namespace logsys{
 
 
-	std::unique_ptr< stdlogb > stdlogb::factory()noexcept try{
-		return stdlogb_factory_object();
-	}catch(std::exception const& e){
-		std::cerr << "terminate with exception in stdlogb factory: "
-			<< e.what() << '\n';
-		std::terminate();
-	}catch(...){
-		std::cerr << "terminate with unknown exception in stdlogb factory\n";
-		std::terminate();
-	}
+	class stdlogb;
+
+	/// \brief Assign your log object maker to this variable
+	extern std::function< std::unique_ptr< stdlogb >() > stdlogb_factory_object;
 
 
 }
+
+
+#endif
