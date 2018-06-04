@@ -22,11 +22,11 @@ namespace logsys{
 
 
 		template < typename LogF >
-		constexpr bool is_simple_log_fn =
+		constexpr bool is_void_log_fn =
 			std::is_invocable_v< LogF, logsys::stdlogb& >;
 
 		template < typename LogF, typename T >
-		constexpr bool is_extended_log_fn =
+		constexpr bool is_result_log_fn =
 			std::is_invocable_v< LogF, logsys::stdlogb&, T >;
 
 
@@ -39,7 +39,7 @@ namespace logsys{
 		/// \brief Add a line to the log
 		template < typename LogF >
 		void log(LogF&& f)const{
-			static_assert(detail::is_simple_log_fn< LogF >,
+			static_assert(detail::is_void_log_fn< LogF >,
 				"expected a log call of the form: "
 				"'.log([](logsys::stdlogb&){})'");
 
@@ -52,20 +52,20 @@ namespace logsys{
 			using result_type = logsys::detail::result_as_ptr_t< Body >;
 
 			if constexpr(std::is_void_v< result_type >){
-				static_assert(detail::is_simple_log_fn< LogF >,
+				static_assert(detail::is_void_log_fn< LogF >,
 					"expected a log call of the form: "
 					"'.log([](logsys::stdlogb&){}, []{})'");
 
 				logsys::log< logsys::stdlogb >(simple_impl(f), body);
 			}else{
-				static_assert(detail::is_simple_log_fn< LogF >
-					|| detail::is_extended_log_fn< LogF, result_type >,
+				static_assert(detail::is_void_log_fn< LogF >
+					|| detail::is_result_log_fn< LogF, result_type >,
 					"expected a log call of the form: "
 					"'.log([](logsys::stdlogb&){}, []{ return ...; })' or "
 					"'.log([](logsys::stdlogb&, auto const* result){}, "
 					"[]{ return ...; })'");
 
-				if constexpr(detail::is_simple_log_fn< LogF >){
+				if constexpr(detail::is_void_log_fn< LogF >){
 					return logsys::log< logsys::stdlogb >(simple_impl(f), body);
 				}else{
 					return logsys::log< logsys::stdlogb >(
@@ -81,15 +81,15 @@ namespace logsys{
 			using result_type = logsys::detail::result_as_ptr_t< Body >;
 
 			if constexpr(std::is_void_v< result_type >){
-				static_assert(detail::is_simple_log_fn< LogF >,
+				static_assert(detail::is_void_log_fn< LogF >,
 					"expected a log call of the form: "
 					"'.exception_catching_log([](logsys::stdlogb&){}, []{})'");
 
 				logsys::exception_catching_log< logsys::stdlogb >(
 					simple_impl(f), body);
 			}else{
-				static_assert(detail::is_simple_log_fn< LogF >
-					|| detail::is_extended_log_fn< LogF, result_type >,
+				static_assert(detail::is_void_log_fn< LogF >
+					|| detail::is_result_log_fn< LogF, result_type >,
 					"expected a log call of the form: "
 					"'.exception_catching_log([](logsys::stdlogb&){}, "
 					"[]{ return ...; })' or "
@@ -97,7 +97,7 @@ namespace logsys{
 					"auto const* result){}, "
 					"[]{ return ...; })'");
 
-				if constexpr(detail::is_simple_log_fn< LogF >){
+				if constexpr(detail::is_void_log_fn< LogF >){
 					return logsys::exception_catching_log< logsys::stdlogb >(
 						simple_impl(f), body);
 				}else{
