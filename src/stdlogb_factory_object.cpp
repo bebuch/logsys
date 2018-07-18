@@ -13,9 +13,10 @@
 namespace logsys{
 
 
-	std::function< std::unique_ptr< stdlogb >() > stdlogb_factory_object(
-		[](){ return std::make_unique< stdlogd >(); }
-	);
+	std::unique_ptr< stdlogb >(*stdlogb_factory_object)()noexcept =
+		[]()noexcept->std::unique_ptr< stdlogb >{
+			return std::make_unique< stdlogd >();
+		};
 
 
 }

@@ -9,6 +9,8 @@
 #ifndef _logsys__stdlogb__hpp_INCLUDED_
 #define _logsys__stdlogb__hpp_INCLUDED_
 
+#include <boost/config.hpp>
+
 #include <iostream>
 #include <memory>
 
@@ -17,14 +19,12 @@ namespace logsys{
 
 
 	/// \brief Base class for dynamic log tag classes
-	class stdlogb{
+	class BOOST_SYMBOL_EXPORT stdlogb{
 	public:
 		/// \brief Create a stdlogb derived log object
 		///
-		/// There are two ways to use this function:
-		///   1. You can just include the header and write your own definition.
-		///   2. You can link agains logsys/liblogsys.so and assign your log
-		///      object creater function to stdlogb_factory_object.
+		/// Link against logsys/liblogsys.so and assign your log object creater
+		/// function to stdlogb_factory_object.
 		static std::unique_ptr< stdlogb > factory()noexcept;
 
 		/// \brief Destructor
