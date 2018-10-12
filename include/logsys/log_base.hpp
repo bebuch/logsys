@@ -37,9 +37,19 @@ namespace logsys{
 	class log_base{
 	public:
 		/// \brief Add a line to the log
-		template < typename LogF >
-		decltype(auto) log(LogF&& f)const{
-			return logsys::log< logsys::stdlogb >(simple_impl(f));
+		template < typename Body >
+		decltype(auto) log(Body&& body)const{
+			using result_type = logsys::detail::result_as_ptr_t< Body >;
+
+			if constexpr(std::is_void_v< result_type >){
+				logsys::log< logsys::stdlogb >(
+					void_simple_impl(),
+					static_cast< Body&& >(body));
+			}else{
+				return logsys::log< logsys::stdlogb >(
+					void_extended_impl< result_type >(),
+					static_cast< Body&& >(body));
+			}
 		}
 
 		/// \brief Add a line to the log with linked code block
@@ -50,9 +60,11 @@ namespace logsys{
 			if constexpr(std::is_void_v< result_type >){
 				static_assert(detail::is_void_log_fn< LogF >,
 					"expected a log call of the form: "
-					"'.log([](logsys::stdlogb&){}, []{})'");
+					"'.log([](logsys::stdlogb&){}, []()->void{})'");
 
-				logsys::log< logsys::stdlogb >(simple_impl(f), body);
+				logsys::log< logsys::stdlogb >(
+					simple_impl(f),
+					static_cast< Body&& >(body));
 			}else{
 				static_assert(detail::is_void_log_fn< LogF >
 					|| detail::is_result_log_fn< LogF, result_type >,
@@ -62,10 +74,13 @@ namespace logsys{
 					"[]{ return ...; })'");
 
 				if constexpr(detail::is_void_log_fn< LogF >){
-					return logsys::log< logsys::stdlogb >(simple_impl(f), body);
+					return logsys::log< logsys::stdlogb >(
+						simple_impl(f),
+						static_cast< Body&& >(body));
 				}else{
 					return logsys::log< logsys::stdlogb >(
-						extended_impl< result_type >(f), body);
+						extended_impl< result_type >(f),
+						static_cast< Body&& >(body));
 				}
 			}
 		}
@@ -82,7 +97,8 @@ namespace logsys{
 					"'.exception_catching_log([](logsys::stdlogb&){}, []{})'");
 
 				logsys::exception_catching_log< logsys::stdlogb >(
-					simple_impl(f), body);
+					simple_impl(f),
+					static_cast< Body&& >(body));
 			}else{
 				static_assert(detail::is_void_log_fn< LogF >
 					|| detail::is_result_log_fn< LogF, result_type >,
@@ -95,10 +111,12 @@ namespace logsys{
 
 				if constexpr(detail::is_void_log_fn< LogF >){
 					return logsys::exception_catching_log< logsys::stdlogb >(
-						simple_impl(f), body);
+						simple_impl(f),
+						static_cast< Body&& >(body));
 				}else{
 					return logsys::exception_catching_log< logsys::stdlogb >(
-						extended_impl< result_type >(f), body);
+						extended_impl< result_type >(f),
+						static_cast< Body&& >(body));
 				}
 			}
 		}
@@ -119,6 +137,21 @@ namespace logsys{
 
 
 	private:
+		/// \brief Helper for log message functions
+		auto void_simple_impl()const{
+			return [&](logsys::stdlogb& os){
+				os << log_prefix_;
+			};
+		}
+
+		/// \brief Helper for log message functions
+		template < typename T >
+		auto void_extended_impl()const{
+			return [&](logsys::stdlogb& os, T){
+				os << log_prefix_;
+			};
+		}
+
 		/// \brief Helper for log message functions
 		template < typename LogF >
 		auto simple_impl(LogF& log)const{
