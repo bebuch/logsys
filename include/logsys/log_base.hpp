@@ -38,12 +38,8 @@ namespace logsys{
 	public:
 		/// \brief Add a line to the log
 		template < typename LogF >
-		void log(LogF&& f)const{
-			static_assert(detail::is_void_log_fn< LogF >,
-				"expected a log call of the form: "
-				"'.log([](logsys::stdlogb&){})'");
-
-			logsys::log< logsys::stdlogb >(simple_impl(f));
+		decltype(auto) log(LogF&& f)const{
+			return logsys::log< logsys::stdlogb >(simple_impl(f));
 		}
 
 		/// \brief Add a line to the log with linked code block

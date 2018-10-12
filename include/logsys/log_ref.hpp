@@ -20,8 +20,8 @@ namespace logsys{
 	public:
 		/// \brief Add a line to the log
 		template < typename LogF >
-		void log(LogF&& f)const{
-			ref_.log(static_cast< LogF&& >(f));
+		decltype(auto) log(LogF&& f)const{
+			return ref_.log(static_cast< LogF&& >(f));
 		}
 
 		/// \brief Add a line to the log with linked code block
