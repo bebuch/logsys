@@ -19,9 +19,9 @@ namespace logsys{
 	class log_ref{
 	public:
 		/// \brief Add a line to the log
-		template < typename Body >
-		decltype(auto) log(Body&& body)const{
-			return ref_.log(static_cast< Body&& >(body));
+		template < typename LogF >
+		decltype(auto) log(LogF&& f)const{
+			return ref_.log(static_cast< LogF&& >(f));
 		}
 
 		/// \brief Add a line to the log with linked code block

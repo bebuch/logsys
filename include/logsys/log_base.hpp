@@ -37,19 +37,9 @@ namespace logsys{
 	class log_base{
 	public:
 		/// \brief Add a line to the log
-		template < typename Body >
-		decltype(auto) log(Body&& body)const{
-			using result_type = logsys::detail::result_as_ptr_t< Body >;
-
-			if constexpr(std::is_void_v< result_type >){
-				logsys::log< logsys::stdlogb >(
-					void_simple_impl(),
-					static_cast< Body&& >(body));
-			}else{
-				return logsys::log< logsys::stdlogb >(
-					void_extended_impl< result_type >(),
-					static_cast< Body&& >(body));
-			}
+		template < typename LogF >
+		decltype(auto) log(LogF&& f)const{
+			return logsys::log< logsys::stdlogb >(simple_impl(f));
 		}
 
 		/// \brief Add a line to the log with linked code block
@@ -137,21 +127,6 @@ namespace logsys{
 
 
 	private:
-		/// \brief Helper for log message functions
-		auto void_simple_impl()const{
-			return [&](logsys::stdlogb& os){
-				os << log_prefix_;
-			};
-		}
-
-		/// \brief Helper for log message functions
-		template < typename T >
-		auto void_extended_impl()const{
-			return [&](logsys::stdlogb& os, T){
-				os << log_prefix_;
-			};
-		}
-
 		/// \brief Helper for log message functions
 		template < typename LogF >
 		auto simple_impl(LogF& log)const{
