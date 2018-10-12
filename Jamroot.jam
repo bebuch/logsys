@@ -29,7 +29,7 @@ project logsys
 	<toolset>clang:<cxxflags>-Wall
 	<toolset>clang:<cxxflags>-Wextra
 	<toolset>clang:<cxxflags>-stdlib=libc++
-	<toolset>clang:<variant>debug:<define>_GLIBCXX_DEBUG
+	<toolset>clang:<variant>debug:<define>_LIBCPP_DEBUG
 	<toolset>clang:<linkflags>-lpthread
 	<toolset>clang:<linkflags>-lc++abi
 	<toolset>clang:<linkflags>-stdlib=libc++
