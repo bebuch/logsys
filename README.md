@@ -30,7 +30,6 @@ auto log(LogCallable&& message_producer)noexcept
 ```
 auto log(LogCallable&& message_producer, Body&& body)
 -> std::invoke_result_t< Body&& >;
-/* same as body */
 ```
 
 ### Log a message bound to a code block and catch any exceptions
@@ -38,7 +37,7 @@ auto log(LogCallable&& message_producer, Body&& body)
 ```
 auto exception_catching_log(LogCallable&& message_producer, Body&& body)noexcept
 -> std::conditional_t< std::is_void_v< std::invoke_result_t< Body&& > >,
-    bool, std::optional< std::invoke_result_t< Body&& > > >
+    bool, optional< std::invoke_result_t< Body&& > > >
 ```
 
 ## License notice
