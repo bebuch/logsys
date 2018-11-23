@@ -9,133 +9,19 @@
 #ifndef _logsys__log__hpp_INCLUDED_
 #define _logsys__log__hpp_INCLUDED_
 
-#include "is_valid.hpp"
+#include "detail/extract_log_t.hpp"
+#include "detail/is_valid.hpp"
+
+#include "optional.hpp"
 
 #include <string_view>
 #include <type_traits>
 #include <functional>
 #include <iostream>
-#include <optional>
 #include <memory>
 
 
 namespace logsys::detail{
-
-
-	/// \brief Extract type of Function parameter
-	template < typename Function >
-	struct extract_log: extract_log< decltype(&Function::operator()) >{};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Function >
-	struct extract_log< Function& >: extract_log< Function >{};
-
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename R >
-	struct extract_log< R(Log&) >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename R >
-	struct extract_log< R(*)(Log&) >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename R, typename F >
-	struct extract_log< R(F::*)(Log&) >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename R, typename F >
-	struct extract_log< R(F::*)(Log&) const >{
-		using type = Log;
-	};
-
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename T, typename R >
-	struct extract_log< R(Log&, T const*) >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename T, typename R >
-	struct extract_log< R(*)(Log&, T const*) >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename T, typename R, typename F >
-	struct extract_log< R(F::*)(Log&, T const*) >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename T, typename R, typename F >
-	struct extract_log< R(F::*)(Log&, T const*) const >{
-		using type = Log;
-	};
-
-
-#ifdef __cpp_noexcept_function_type
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename R >
-	struct extract_log< R(Log&)noexcept >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename R >
-	struct extract_log< R(*)(Log&)noexcept >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename R, typename F >
-	struct extract_log< R(F::*)(Log&)noexcept >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename R, typename F >
-	struct extract_log< R(F::*)(Log&)const noexcept >{
-		using type = Log;
-	};
-
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename T, typename R >
-	struct extract_log< R(Log&, T const*)noexcept >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename T, typename R >
-	struct extract_log< R(*)(Log&, T const*)noexcept >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename T, typename R, typename F >
-	struct extract_log< R(F::*)(Log&, T const*)noexcept >{
-		using type = Log;
-	};
-
-	/// \brief Implementation of extract_log_t
-	template < typename Log, typename T, typename R, typename F >
-	struct extract_log< R(F::*)(Log&, T const*)const noexcept >{
-		using type = Log;
-	};
-#endif
-
-
-	/// \brief Extract type of first parameter from log function
-	template < typename Function >
-	using extract_log_t = typename extract_log< Function >::type;
 
 
 	/// \brief Type trait for log types
@@ -298,12 +184,6 @@ namespace logsys::detail{
 	};
 
 
-	template < typename Log >
-	constexpr bool is_extractable_log_f =
-		is_valid< Log >([](auto& x)->decltype((void)
-			std::declval< extract_log_t<
-				std::remove_reference_t< decltype(x) > > >()){});
-
 	template < typename Body >
 	using result_as_ptr_t =
 		std::remove_reference_t< std::invoke_result_t< Body& > > const*;
@@ -328,9 +208,13 @@ namespace logsys::detail{
 	///   4. Call log->exec()
 	template < typename LogF, typename Log, typename T = void >
 	inline void exec_log(
-		LogF& log_f, std::unique_ptr< Log >& log, T const* result = nullptr
+		LogF& log_f,
+		std::unique_ptr< Log >& log,
+		T const* result = nullptr
 	)noexcept{
-		if constexpr(log_trait< Log >::has_pre){ log->pre(); }
+		if constexpr(log_trait< Log >::has_pre){
+			log->pre();
+		}
 
 		try{
 			if constexpr(std::is_void_v< T >){
@@ -349,7 +233,9 @@ namespace logsys::detail{
 			*log << "<EXCEPTION WHILE LOGGING: unknown exception>";
 		}
 
-		if constexpr(log_trait< Log >::has_post){ log->post(); }
+		if constexpr(log_trait< Log >::has_post){
+			log->post();
+		}
 
 		log->exec();
 	}
@@ -377,20 +263,19 @@ namespace logsys::detail{
 			if constexpr(is_simple_log_f< LogF, Log >){
 				exec_log(log_f, log);
 			}else{
-				exec_log(log_f, log,
-					static_cast< result_as_ptr_t< Body > >(
-						std::addressof(result)));
+				exec_log(log_f, log, result);
 			}
 			return result;
 		}
 	}catch(...){
-		if constexpr(log_trait< Log >::has_body_failed){ log->body_failed(); }
+		if constexpr(log_trait< Log >::has_body_failed){
+			log->body_failed();
+		}
 
 		if constexpr(is_simple_log_f< LogF, Log >){
 			exec_log(log_f, log);
 		}else{
-			exec_log(log_f, log,
-				static_cast< result_as_ptr_t< Body > >(nullptr));
+			exec_log(log_f, log, std::invoke_result_t< Body& >());
 		}
 
 		throw;
@@ -399,12 +284,12 @@ namespace logsys::detail{
 	/// \brief Call the associated code block and catch exceptions
 	///
 	///   - If no exception appears:
-	///       1. return with associated code block result as std::optional
+	///       1. return with associated code block result as optional
 	///   - If an exception appears:
 	///       1. exception is derived from std::exception
 	///           - yes: Call log->set_exception(exception)
 	///           - no: Call log->unknown_exception()
-	///       2. return with an empty std::optional
+	///       2. return with an empty optional
 	template < typename Body, typename Log >
 	inline auto exec_exception_catching_body(
 		Body& body,
@@ -413,17 +298,12 @@ namespace logsys::detail{
 		using body_type = std::invoke_result_t< Body& >;
 		constexpr auto is_void = std::is_void_v< body_type >;
 
-		using return_type = std::conditional_t<
-			std::is_reference_v< body_type >,
-			std::reference_wrapper< std::remove_reference_t< body_type > >,
-			body_type >;
-
 		try{
 			if constexpr(is_void){
 				std::invoke(body);
 				return true;
 			}else{
-				return std::optional< return_type >(std::invoke(body));
+				return optional< body_type >(std::invoke(body));
 			}
 		}catch(std::exception const& error){
 			log->set_exception(error);
@@ -434,7 +314,7 @@ namespace logsys::detail{
 		if constexpr(is_void){
 			return false;
 		}else{
-			return std::optional< return_type >();
+			return optional< body_type >();
 		}
 	}
 
@@ -492,7 +372,7 @@ namespace logsys{
 	/// \copydoc log< Log, LogF >(LogF&&)
 	template < typename LogF >
 	inline void log(LogF&& log_f)noexcept{
-		static_assert(detail::is_extractable_log_f< LogF >,
+		static_assert(detail::is_extract_log_valid_v< LogF >,
 			"Can not extract Log type from first parameter of the log "
 			"function. "
 			"A valid log()-call without body must have the form: "
@@ -520,7 +400,7 @@ namespace logsys{
 	///     });
 	/// \endcode
 	template < typename Log, typename LogF, typename Body >
-	inline decltype(auto) log(LogF&& log_f, Body&& body){
+	inline std::invoke_result_t< Body&& > log(LogF&& log_f, Body&& body){
 		static_assert(std::is_invocable_v< Body& >,
 			"Parameter body must be a callable without arguments.");
 
@@ -552,8 +432,8 @@ namespace logsys{
 
 	/// \copydoc log< Log, LogF, Body >(LogF&&, Body&&)
 	template < typename LogF, typename Body >
-	inline decltype(auto) log(LogF&& log_f, Body&& body){
-		static_assert(detail::is_extractable_log_f< LogF >,
+	inline std::invoke_result_t< Body&& > log(LogF&& log_f, Body&& body){
+		static_assert(detail::is_extract_log_valid_v< LogF >,
 			"Can not extract Log type from first parameter of the log function."
 			"A valid log()-call with body must have the form: "
 			"'logsys::log< Log >([](Log&){}, []{});' or "
@@ -584,7 +464,7 @@ namespace logsys{
 	/// Usage Example:
 	///
 	/// \code{.cpp}
-	/// std::optional< int > result = exception_catching_log(
+	/// optional< int > result = exception_catching_log(
 	///     [](your_log_tag_type& os){ os << "your message"; },
 	///     []{
 	///         // your code
@@ -592,7 +472,10 @@ namespace logsys{
 	///     });
 	/// \endcode
 	template < typename Log, typename LogF, typename Body >
-	inline auto exception_catching_log(LogF&& log_f, Body&& body)noexcept{
+	inline auto exception_catching_log(LogF&& log_f, Body&& body)noexcept
+	-> std::conditional_t< std::is_void_v< std::invoke_result_t< Body&& > >,
+		bool, optional< std::invoke_result_t< Body&& > > >
+	{
 		auto log = detail::make_log< Log >();
 
 		if constexpr(detail::log_trait< Log >::has_have_body){
@@ -603,17 +486,18 @@ namespace logsys{
 		if constexpr(detail::is_simple_log_f< LogF, Log >){
 			detail::exec_log(log_f, log);
 		}else{
-			detail::exec_log(log_f, log,
-				static_cast< detail::result_as_ptr_t< Body > >(
-					result ? std::addressof(*result) : nullptr));
+			detail::exec_log(log_f, log, result);
 		}
 		return result;
 	}
 
 	/// \copydoc exception_catching_log< Log, LogF, Body >(LogF&&, Body&&)
 	template < typename LogF, typename Body >
-	inline auto exception_catching_log(LogF&& log_f, Body&& body)noexcept{
-		static_assert(detail::is_extractable_log_f< LogF >,
+	inline auto exception_catching_log(LogF&& log_f, Body&& body)noexcept
+	-> std::conditional_t< std::is_void_v< std::invoke_result_t< Body&& > >,
+		bool, optional< std::invoke_result_t< Body&& > > >
+	{
+		static_assert(detail::is_extract_log_valid_v< LogF >,
 			"Can not extract Log type from first parameter of the "
 			"exception_catching_log function. A valid "
 			"exception_catching_log()-call must have the form: "

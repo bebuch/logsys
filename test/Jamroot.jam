@@ -1,11 +1,5 @@
 import os ;
-local boost = [ os.environ BOOST_ROOT ] ;
-local logsys = ../../logsys ;
-local io_tools = ../../io_tools ;
-
-use-project /boost
-	: $(boost)
-	;
+local logsys = .. ;
 
 use-project /logsys
 	: $(logsys)
@@ -19,10 +13,6 @@ project logsys_tests
 
 	<warnings>all
 	<c++-template-depth>1024
-
-	<define>BOOST_HANA_CONFIG_ENABLE_STRING_UDL
-	<define>BOOST_ASIO_HAS_STD_CHRONO
-	<define>BOOST_NO_AUTO_PTR
 
 	<toolset>gcc:<cxxflags>-std=gnu++1z
 	<toolset>gcc:<cxxflags>-fconstexpr-depth=1024
@@ -42,8 +32,6 @@ project logsys_tests
 	<toolset>clang:<linkflags>-lc++abi
 	<toolset>clang:<linkflags>-stdlib=libc++
 
-	<include>$(boost)
-	<include>$(io_tools)/include
 	<include>$(logsys)/include
 	<include>../include
 	:
@@ -59,5 +47,4 @@ exe test1
 exe is_valid
 	:
 	is_valid.cpp
-	/logsys//logsys
 	;
