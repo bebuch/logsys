@@ -174,22 +174,22 @@ namespace logsys{
 
 
 		template < typename T >
-		struct optional{
+		struct optional_choose{
 			using type = std::optional< T >;
 		};
 
 		template < typename T >
-		struct optional< T& >{
+		struct optional_choose< T& >{
 			using type = optional_lvalue_reference< T >;
 		};
 
 		template < typename T >
-		struct optional< T&& >{
+		struct optional_choose< T&& >{
 			using type = optional_rvalue_reference< T >;
 		};
 
 		template <>
-		struct optional< void >{
+		struct optional_choose< void >{
 			using type = bool;
 		};
 
@@ -199,7 +199,7 @@ namespace logsys{
 
 	/// \brief Return type for exception_catching_log
 	template < typename T >
-	using optional = typename detail::optional< T >::type;
+	using optional = typename detail::optional_choose< T >::type;
 
 
 }
