@@ -136,27 +136,12 @@ namespace logsys::detail{
 	};
 
 
-	template < typename T >
-	struct remove_lvalue_reference{
-		using type = T;
-	};
-
-	template < typename T >
-	struct remove_lvalue_reference< T& >{
-		using type = T;
-	};
-
-	template < typename T >
-	using remove_lvalue_reference_t =
-		typename remove_lvalue_reference< T >::type;
-
-
 	template < typename BodyRT, typename RTP >
 	constexpr bool is_valid_body_return_type_parameter =
 		std::is_void_v< RTP > ||
-		std::is_same_v<
-			std::remove_const_t< remove_lvalue_reference_t< RTP > >,
-			optional< BodyRT > >;
+		std::is_same_v< RTP, optional< BodyRT > > ||
+		std::is_same_v< RTP, optional< BodyRT > const > ||
+		std::is_same_v< RTP, optional< BodyRT > const& >;
 
 
 	/// \brief Implementation of extract_log_t

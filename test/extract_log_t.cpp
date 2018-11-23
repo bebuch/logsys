@@ -4,17 +4,12 @@
 namespace {
 
 
-	using logsys::detail::remove_lvalue_reference_t;
 	using logsys::detail::is_valid_body_return_type_parameter;
 	using logsys::optional_lvalue_reference;
 	using logsys::optional_rvalue_reference;
 
-	static_assert(std::is_same_v< remove_lvalue_reference_t< int >, int >);
-	static_assert(std::is_same_v< remove_lvalue_reference_t< int& >, int >);
-	static_assert(std::is_same_v< remove_lvalue_reference_t< int&& >, int&& >);
-
 	static_assert( is_valid_body_return_type_parameter< void, bool >);
-	static_assert( is_valid_body_return_type_parameter< void, bool& >);
+	static_assert(!is_valid_body_return_type_parameter< void, bool& >);
 	static_assert( is_valid_body_return_type_parameter< void, bool const >);
 	static_assert( is_valid_body_return_type_parameter< void, bool const& >);
 	static_assert(!is_valid_body_return_type_parameter< void, bool&& >);
@@ -22,7 +17,7 @@ namespace {
 
 	static_assert( is_valid_body_return_type_parameter< int,
 		std::optional< int > >);
-	static_assert( is_valid_body_return_type_parameter< int,
+	static_assert(!is_valid_body_return_type_parameter< int,
 		std::optional< int >& >);
 	static_assert( is_valid_body_return_type_parameter< int,
 		std::optional< int > const >);
@@ -35,7 +30,7 @@ namespace {
 
 	static_assert( is_valid_body_return_type_parameter< int&,
 		optional_lvalue_reference< int > >);
-	static_assert( is_valid_body_return_type_parameter< int&,
+	static_assert(!is_valid_body_return_type_parameter< int&,
 		optional_lvalue_reference< int >& >);
 	static_assert( is_valid_body_return_type_parameter< int&,
 		optional_lvalue_reference< int > const >);
@@ -48,7 +43,7 @@ namespace {
 
 	static_assert( is_valid_body_return_type_parameter< int&&,
 		optional_rvalue_reference< int > >);
-	static_assert( is_valid_body_return_type_parameter< int&&,
+	static_assert(!is_valid_body_return_type_parameter< int&&,
 		optional_rvalue_reference< int >& >);
 	static_assert( is_valid_body_return_type_parameter< int&&,
 		optional_rvalue_reference< int > const >);
