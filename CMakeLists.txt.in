@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 2.8.2)
+
+project(io_tools-download NONE)
+
+include(ExternalProject)
+ExternalProject_Add(io_tools
+  GIT_REPOSITORY    https://github.com/bebuch/io_tools.git
+  GIT_TAG           master
+  SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/io_tools-src"
+  BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/io_tools-build"
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)

@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.12.4)
-
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
@@ -26,7 +24,7 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
                  EXCLUDE_FROM_ALL)
 
 
-project(test)
+project(tests)
 
 # Setup testing
 enable_testing()
@@ -44,8 +42,3 @@ add_executable(tests ${SOURCE_FILES})
 
 # Link test executable against gtest & gtest_main
 target_link_libraries(tests logsys gtest_main)
-
-add_test(
-    NAME tests
-    COMMAND tests
-)

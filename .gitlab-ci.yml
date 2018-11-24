@@ -4,7 +4,6 @@ gcc-test:
   stage: test
   script:
     - script/build.sh
-    - script/test.sh
 
 # build and test with clang
 llvm-test:
@@ -12,4 +11,3 @@ llvm-test:
   stage: test
   script:
     - script/build.sh
-    - script/test.sh

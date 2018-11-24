@@ -1,4 +1,30 @@
 cmake_minimum_required(VERSION 3.12.4)
+
+# Download and unpack io_tools at configure time
+configure_file(CMakeLists.txt.in io_tools-download/CMakeLists.txt)
+execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/io_tools-download )
+if(result)
+  message(FATAL_ERROR "CMake step for io_tools failed: ${result}")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} --build .
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/io_tools-download )
+if(result)
+  message(FATAL_ERROR "Build step for io_tools failed: ${result}")
+endif()
+
+# Prevent overriding the parent project's compiler/linker
+# settings on Windows
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+# Add io_tools directly to our build.
+add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/io_tools-src
+                 ${CMAKE_CURRENT_BINARY_DIR}/io_tools-build
+                 EXCLUDE_FROM_ALL)
+
+
 project(logsys VERSION 1.1.0 LANGUAGES CXX)
 
 set(DEFAULT_BUILD_TYPE "Release")
@@ -14,11 +40,16 @@ endif()
 
 include(GNUInstallDirs)
 
+include_directories(SYSTEM ${io_tools_SOURCE_DIR}/include)
+
 file(GLOB SOURCE_FILES src/*.cpp)
 
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
-include_directories(../io_tools/include)
+add_subdirectory(test)
+enable_testing()
+add_test(NAME tests COMMAND tests)
+
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>

@@ -4,8 +4,11 @@
 set -e
 set -o xtrace
 
-# Build liblogsys
+# Build liblogsys and tests
 mkdir -p build
 cd build
 cmake ..
 make
+
+# Run tests
+./test/tests
