@@ -69,7 +69,7 @@ struct t2{
 };
 
 
-int main(){
+void test(){
 	std::function< void(stdlogb&) > stdf_r = [](stdlogb& os){ os << "stdf_r"; };
 	auto lambda_r = [](stdlogb& os){ os << "lambda_r"; };
 

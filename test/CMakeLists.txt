@@ -43,7 +43,7 @@ file(GLOB SOURCE_FILES "*.cpp")
 add_executable(tests ${SOURCE_FILES})
 
 # Link test executable against gtest & gtest_main
-target_link_libraries(tests gtest_main)
+target_link_libraries(tests logsys gtest_main)
 
 add_test(
     NAME tests

@@ -12,25 +12,18 @@
 #include "detail/extract_log_t.hpp"
 #include "detail/log_trait.hpp"
 
-#include <string_view>
 #include <functional>
-#include <iostream>
-#include <memory>
 
 
 namespace logsys::detail{
 
-
-	template < typename Body >
-	using result_as_ptr_t =
-		std::remove_reference_t< std::invoke_result_t< Body& > > const*;
 
 	template < typename LogF, typename Log >
 	constexpr bool is_simple_log_f = std::is_invocable_v< LogF&, Log& >;
 
 	template < typename LogF, typename Log, typename Body >
 	constexpr bool is_extended_log_f = std::is_invocable_v< LogF&, Log&,
-		result_as_ptr_t< Body > >;
+		optional< std::invoke_result_t< Body& > > const& >;
 
 	template < typename LogF, typename Log, typename Body >
 	constexpr bool is_valid_log_f = is_simple_log_f< LogF, Log >
@@ -260,7 +253,7 @@ namespace logsys{
 			"return type of the body function is void. Remove the second "
 			"argument from your log message function.");
 
-		if constexpr(detail::log_trait< Log >::has_have_body){
+		if constexpr(log_trait< Log >::has_have_body){
 			log->have_body();
 		}
 
@@ -315,7 +308,7 @@ namespace logsys{
 	{
 		auto log = detail::make_log< Log >();
 
-		if constexpr(detail::log_trait< Log >::has_have_body){
+		if constexpr(log_trait< Log >::has_have_body){
 			log->have_body();
 		}
 
