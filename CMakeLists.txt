@@ -27,6 +27,8 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/io_tools-src
 
 project(logsys VERSION 1.1.0 LANGUAGES CXX)
 
+find_package(Boost REQUIRED)
+
 set(DEFAULT_BUILD_TYPE "Release")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,7 +42,7 @@ endif()
 
 include(GNUInstallDirs)
 
-include_directories(SYSTEM ${io_tools_SOURCE_DIR}/include)
+include_directories(SYSTEM ${io_tools_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
 
 file(GLOB SOURCE_FILES src/*.cpp)
 
