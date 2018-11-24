@@ -9,8 +9,6 @@
 #ifndef _logsys__stdlogb__hpp_INCLUDED_
 #define _logsys__stdlogb__hpp_INCLUDED_
 
-#include <boost/config.hpp>
-
 #include <iostream>
 #include <memory>
 
@@ -19,7 +17,7 @@ namespace logsys{
 
 
 	/// \brief Base class for dynamic log tag classes
-	class BOOST_SYMBOL_EXPORT stdlogb{
+	class [[gnu::visibility("default")]] stdlogb{
 	public:
 		/// \brief Create a stdlogb derived log object
 		///
