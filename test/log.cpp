@@ -13,7 +13,6 @@
 
 #include <iostream>
 
-l
 using logsys::stdlogb;
 
 
