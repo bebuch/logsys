@@ -19,8 +19,7 @@ namespace logsys{
 	class stdlogb;
 
 	/// \brief Assign your log object maker to this variable
-	extern [[gnu::visibility("default")]]
-	std::unique_ptr< stdlogb >(*stdlogb_factory_object)()noexcept;
+	extern std::unique_ptr< stdlogb >(*stdlogb_factory_object)()noexcept;
 
 
 }
