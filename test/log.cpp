@@ -13,6 +13,7 @@
 
 namespace{
 
+
 	using logsys::optional;
 	using logsys::optional_lvalue_reference;
 	using logsys::optional_rvalue_reference;

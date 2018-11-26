@@ -18,98 +18,96 @@
 namespace logsys{
 
 
-	namespace detail{
-
-
-		template < typename LogF >
-		constexpr bool is_void_log_fn =
-			std::is_invocable_v< LogF, logsys::stdlogb& >;
-
-		template < typename LogF, typename T >
-		constexpr bool is_result_log_fn =
-			std::is_invocable_v< LogF, logsys::stdlogb&, T >;
-
-
-	}
-
-
 	/// \brief Base class that implementes log functions as members
 	class log_base{
 	public:
 		/// \brief Add a line to the log
 		template < typename LogF >
-		decltype(auto) log(LogF&& f)const{
-			return logsys::log< logsys::stdlogb >(simple_impl(f));
+		decltype(auto) log(LogF&& log_f)const{
+			static_assert(detail::is_extract_log_valid_v< LogF, detail::nobody_t >,
+				"Can not extract Log type from first parameter of the log "
+				"function. "
+				"A valid log()-call without body must have the form: "
+				"'this->log([](Log&){});' where Log is your Log type.");
+
+			using log_type = detail::extract_log_t< LogF, detail::nobody_t >;
+
+			static_assert(detail::is_simple_log_f< LogF, log_type >,
+				"Argument log_f is not a valid log message function. "
+				"A valid log()-call without body must have the form: "
+				"'this->log([](Log&){});' where Log is your Log type.");
+
+			::logsys::log([&](log_type& log){
+					log << log_prefix_;
+					log_f(log);
+				});
 		}
 
 		/// \brief Add a line to the log with linked code block
 		template < typename LogF, typename Body >
-		decltype(auto) log(LogF&& f, Body&& body)const{
-			using body_return_type = std::invoke_result_t< Body& >;
+		decltype(auto) log(LogF&& log_f, Body&& body)const{
+			using body_return_type = detail::body_return_t< Body >;
+			static_assert(
+				detail::is_extract_log_valid_v< LogF, body_return_type >,
+				"Can not extract Log type from first parameter of the log "
+				"function. A valid log()-call with body must have the form: "
+				"'this->log([](Log&){}, []{});' or "
+				"'this->log([](Log&, "
+				"logsys::optional< value_type > const& value){}, "
+				"[]{ return value; });' where Log is your Log type.");
 
-			if constexpr(std::is_void_v< body_return_type >){
-				static_assert(detail::is_void_log_fn< LogF >,
-					"expected a log call of the form: "
-					"'.log([](logsys::stdlogb&){}, []()->void{})'");
+			using log_type = detail::extract_log_t< LogF, body_return_type >;
 
-				logsys::log< logsys::stdlogb >(
-					simple_impl(f),
-					static_cast< Body&& >(body));
+			if constexpr(detail::is_simple_log_f< LogF, log_type >){
+				return ::logsys::log(
+						[&](log_type& log){
+							log << log_prefix_;
+							log_f(log);
+						}, body);
 			}else{
-				static_assert(detail::is_void_log_fn< LogF >
-					|| detail::is_result_log_fn< LogF,
-						optional< body_return_type > const& >,
-					"expected a log call of the form: "
-					"'.log([](logsys::stdlogb&){}, []{ return ...; })' or "
-					"'.log([](logsys::stdlogb&, auto const* result){}, "
-					"[]{ return ...; })'");
-
-				if constexpr(detail::is_void_log_fn< LogF >){
-					return logsys::log< logsys::stdlogb >(
-						simple_impl(f),
-						static_cast< Body&& >(body));
-				}else{
-					return logsys::log< logsys::stdlogb >(
-						extended_impl< body_return_type >(f),
-						static_cast< Body&& >(body));
-				}
+				return ::logsys::log(
+						[&](
+							log_type& log,
+							optional< body_return_type > const& result
+						){
+							log << log_prefix_;
+							log_f(log, result);
+						}, body);
 			}
 		}
 
 		/// \brief Add a line to the log with linked code block and catch all
 		///        exceptions
 		template < typename LogF, typename Body >
-		decltype(auto) exception_catching_log(LogF&& f, Body&& body)const{
-			using body_return_type = std::invoke_result_t< Body& >;
+		auto exception_catching_log(LogF&& log_f, Body&& body)const{
+			using body_return_type = detail::body_return_t< Body >;
+			static_assert(
+				detail::is_extract_log_valid_v< LogF, body_return_type >,
+				"Can not extract Log type from first parameter of the "
+				"exception_catching_log function. A valid "
+				"exception_catching_log()-call must have the form: "
+				"'this->exception_catching_log([](Log&){}, []{});' or "
+				"'this->exception_catching_log("
+				"[](Log&, logsys::optional< value_type > const& value){}, "
+				"[]{ return value });' where Log is your Log type.");
 
-			if constexpr(std::is_void_v< body_return_type >){
-				static_assert(detail::is_void_log_fn< LogF >,
-					"expected a log call of the form: "
-					"'.exception_catching_log([](logsys::stdlogb&){}, []{})'");
+			using log_type = detail::extract_log_t< LogF, body_return_type >;
 
-				logsys::exception_catching_log< logsys::stdlogb >(
-					simple_impl(f),
-					static_cast< Body&& >(body));
+			if constexpr(detail::is_simple_log_f< LogF, log_type >){
+				return ::logsys::exception_catching_log(
+						[&](log_type& log){
+							log << log_prefix_;
+							log_f(log);
+						}, body);
 			}else{
-				static_assert(detail::is_void_log_fn< LogF >
-					|| detail::is_result_log_fn< LogF,
-						optional< body_return_type > const& >,
-					"expected a log call of the form: "
-					"'.exception_catching_log([](logsys::stdlogb&){}, "
-					"[]{ return ...; })' or "
-					"'.exception_catching_log([](logsys::stdlogb&, "
-					"auto const* result){}, "
-					"[]{ return ...; })'");
-
-				if constexpr(detail::is_void_log_fn< LogF >){
-					return logsys::exception_catching_log< logsys::stdlogb >(
-						simple_impl(f),
-						static_cast< Body&& >(body));
-				}else{
-					return logsys::exception_catching_log< logsys::stdlogb >(
-						extended_impl< body_return_type >(f),
-						static_cast< Body&& >(body));
-				}
+				return ::logsys::exception_catching_log(
+						[&](
+							log_type& log,
+							optional< body_return_type > const& result
+						){
+							log << log_prefix_;
+							log_f(log, result);
+						}, body);
 			}
 		}
 
@@ -129,25 +127,6 @@ namespace logsys{
 
 
 	private:
-		/// \brief Helper for log message functions
-		template < typename LogF >
-		auto simple_impl(LogF& log)const{
-			return [&](logsys::stdlogb& os){
-				os << log_prefix_;
-				log(os);
-			};
-		}
-
-		/// \brief Helper for log message functions
-		template < typename T, typename LogF >
-		auto extended_impl(LogF& log)const{
-			return [&](logsys::stdlogb& os, T const& result){
-				os << log_prefix_;
-				log(os, result);
-			};
-		}
-
-
 		/// \brief The log prefix message
 		std::string log_prefix_;
 	};

@@ -30,6 +30,18 @@ namespace logsys::detail{
 		|| is_extended_log_f< LogF, Log, BodyRT >;
 
 
+	template < typename Body >
+	struct body_return_type{
+		static_assert(std::is_invocable_v< Body& >,
+			"Parameter body must be a callable without arguments.");
+
+		using type = std::invoke_result_t< Body& >;
+	};
+
+	template < typename Body >
+	using body_return_t = typename body_return_type< Body >::type;
+
+
 	/// \brief Execute user defined log function and call `exec` on log object
 	///
 	/// Call `set_log_exception` before `exec` if user defined log function
@@ -198,27 +210,17 @@ namespace logsys{
 	/// \endcode
 	template < typename LogF, typename Body >
 	inline decltype(auto) log(LogF&& log_f, Body&& body){
-		static_assert(std::is_invocable_v< Body& >,
-			"Parameter body must be a callable without arguments.");
-
-		using body_return_type = std::invoke_result_t< Body& >;
-		static_assert(detail::is_extract_log_valid_v< LogF, body_return_type >,
-			"Can not extract Log type from first parameter of the log function."
-			"A valid log()-call with body must have the form: "
+		using body_return_type = detail::body_return_t< Body >;
+		static_assert(
+			detail::is_extract_log_valid_v< LogF, body_return_type >,
+			"Can not extract Log type from first parameter of the log "
+			"function. A valid log()-call with body must have the form: "
 			"'logsys::log([](Log&){}, []{});' or "
 			"'logsys::log([](Log&, "
 			"logsys::optional< value_type > const& value){}, "
 			"[]{ return value; });' where Log is your Log type.");
 
 		using log_type = detail::extract_log_t< LogF, body_return_type >;
-// 		static_assert(
-// 			detail::is_valid_log_f< LogF, log_type, body_return_type >,
-// 			"Argument log_f is not a valid log message function. "
-// 			"A valid log()-call with body must have the form: "
-// 			"'logsys::log([](Log&){}, []{});' or "
-// 			"'logsys::log([](Log&, "
-// 			"logsys::optional< value_type > const& value){}, "
-// 			"[]{ return value; });' where Log is your Log type.");
 
 		return ::logsys::detail::log<
 			LogF, log_type, Body, body_return_type >(log_f, body);
@@ -251,11 +253,9 @@ namespace logsys{
 	/// \endcode
 	template < typename LogF, typename Body >
 	inline auto exception_catching_log(LogF&& log_f, Body&& body)noexcept{
-		static_assert(std::is_invocable_v< Body& >,
-			"Parameter body must be a callable without arguments.");
-
-		using body_return_type = std::invoke_result_t< Body& >;
-		static_assert(detail::is_extract_log_valid_v< LogF, body_return_type >,
+		using body_return_type = detail::body_return_t< Body >;
+		static_assert(
+			detail::is_extract_log_valid_v< LogF, body_return_type >,
 			"Can not extract Log type from first parameter of the "
 			"exception_catching_log function. A valid "
 			"exception_catching_log()-call must have the form: "
@@ -265,14 +265,6 @@ namespace logsys{
 			"[]{ return value });' where Log is your Log type.");
 
 		using log_type = detail::extract_log_t< LogF, body_return_type >;
-// 		static_assert(
-// 			detail::is_valid_log_f< LogF, log_type, body_return_type >,
-// 			"Argument log_f is not a valid log message function. "
-// 			"A valid log()-call with body must have the form: "
-// 			"'logsys::exception_catching_log([](Log&){}, []{});' or "
-// 			"'logsys::exception_catching_log("
-// 			"[](Log&, logsys::optional< value_type > const& value){}, "
-// 			"[]{ return value });' where Log is your Log type.");
 
 		return ::logsys::detail::exception_catching_log<
 			LogF, log_type, Body, body_return_type >(log_f, body);
