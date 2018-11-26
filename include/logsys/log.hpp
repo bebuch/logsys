@@ -30,20 +30,6 @@ namespace logsys::detail{
 		|| is_extended_log_f< LogF, Log, BodyRT >;
 
 
-	/// \brief Construct a new log object
-	///
-	///   - Log::factory exists
-	///       - yes: construct by calling Log::factory()
-	///       - no: construct by calling standard constructor
-	template < typename Log >
-	inline auto make_log()noexcept{
-		if constexpr(log_trait< Log >::has_factory){
-			return Log::factory(); // BUG: May throw
-		}else{
-			return std::unique_ptr< Log >(); // BUG: May throw
-		}
-	}
-
 	/// \brief Execute user defined log function and call `exec` on log object
 	///
 	/// Call `set_log_exception` before `exec` if user defined log function
@@ -51,48 +37,48 @@ namespace logsys::detail{
 	template < typename LogF, typename Log, typename BodyRT >
 	inline void exec_log(
 		LogF& log_f,
-		std::unique_ptr< Log >& log,
+		Log& log,
 		optional< BodyRT > const& return_value
 	)noexcept{
 		try{
 			if constexpr(is_simple_log_f< LogF, Log >){
 				(void)return_value; // Silance GCC
-				std::invoke(log_f, *log);
+				std::invoke(log_f, log);
 			}else{
-				std::invoke(log_f, *log, return_value);
+				std::invoke(log_f, log, return_value);
 			}
 		}catch(...){
-			log->set_log_exception(std::current_exception());
+			log.set_log_exception(std::current_exception());
 		}
 
-		log->exec();
+		log.exec();
 	}
 
 	/// \brief Log without a body function
 	template < typename LogF, typename Log >
 	inline void log(LogF& log_f)noexcept{
-		auto log = detail::make_log< Log >();
+		auto log = Log();
 
 		try{
-			std::invoke(log_f, *log);
+			std::invoke(log_f, log);
 		}catch(...){
-			log->set_log_exception(std::current_exception());
+			log.set_log_exception(std::current_exception());
 		}
 
-		log->exec();
+		log.exec();
 	}
 
 	/// \brief Log with a body function
 	template < typename LogF, typename Log, typename Body, typename BodyRT >
 	inline BodyRT log(LogF& log_f, Body& body){
-		auto log = detail::make_log< Log >();
+		auto log = Log();
 
 		try{
 			if constexpr(std::is_void_v< BodyRT >){
 				std::invoke(body);
 
 				if constexpr(log_trait< Log >::has_body_finished){
-					log->body_finished();
+					log.body_finished();
 				}
 
 				exec_log< LogF, Log, BodyRT >(log_f, log, true);
@@ -100,7 +86,7 @@ namespace logsys::detail{
 				optional< BodyRT > body_value(std::invoke(body));
 
 				if constexpr(log_trait< Log >::has_body_finished){
-					log->body_finished();
+					log.body_finished();
 				}
 
 				exec_log< LogF, Log, BodyRT >(log_f, log, body_value);
@@ -109,10 +95,10 @@ namespace logsys::detail{
 			}
 		}catch(...){
 			if constexpr(log_trait< Log >::has_body_finished){
-				log->body_finished();
+				log.body_finished();
 			}
 
-			log->set_body_exception(std::current_exception());
+			log.set_body_exception(std::current_exception());
 
 			auto body_value = optional< BodyRT >();
 			exec_log< LogF, Log, BodyRT >(log_f, log, body_value);
@@ -125,14 +111,14 @@ namespace logsys::detail{
 	template < typename LogF, typename Log, typename Body, typename BodyRT >
 	inline optional< BodyRT >
 	exception_catching_log(LogF& log_f, Body& body)noexcept{
-		auto log = detail::make_log< Log >();
+		auto log = Log();
 
 		try{
 			if constexpr(std::is_void_v< BodyRT >){
 				std::invoke(body);
 
 				if constexpr(log_trait< Log >::has_body_finished){
-					log->body_finished();
+					log.body_finished();
 				}
 
 				exec_log< LogF, Log, BodyRT >(log_f, log, true);
@@ -142,7 +128,7 @@ namespace logsys::detail{
 				optional< BodyRT > body_value(std::invoke(body));
 
 				if constexpr(log_trait< Log >::has_body_finished){
-					log->body_finished();
+					log.body_finished();
 				}
 
 				exec_log< LogF, Log, BodyRT >(log_f, log, body_value);
@@ -151,10 +137,10 @@ namespace logsys::detail{
 			}
 		}catch(...){
 			if constexpr(log_trait< Log >::has_body_finished){
-				log->body_finished();
+				log.body_finished();
 			}
 
-			log->set_body_exception(std::current_exception());
+			log.set_body_exception(std::current_exception());
 
 			auto body_value = optional< BodyRT >();
 			exec_log< LogF, Log, BodyRT >(log_f, log, body_value);

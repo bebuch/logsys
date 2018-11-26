@@ -17,7 +17,7 @@ namespace logsys{
 
 
 	/// \brief The standard dynamic log class
-	class stdlogd: public stdlogb, protected stdlog{
+	class stdlogd: public stdlog_base, protected stdlog{
 	public:
 		/// \copydoc stdlog::body_finished()
 		void body_finished()noexcept override{

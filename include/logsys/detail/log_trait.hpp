@@ -108,54 +108,9 @@ namespace logsys{
 			"Log member function .body_finished() must be nothrow callable.");
 
 
-		/// \brief true if Log has a static factory function without arguments
-		///        returning a std::unique_ptr< Log >, otherwise false
-		static constexpr bool has_factory = detail::is_valid< Log >(
-			[](auto& x)->decltype((void)
-				std::remove_reference_t< decltype(x) >::factory()){});
-
-		/// \brief true if has_factory is false, or factory() return a
-		///        std::unique_ptr< Log >, false otherwise
-		static constexpr bool has_factory_valid_return_type =
-			[]{
-				if constexpr(has_factory){
-					using factory_type =
-						std::invoke_result_t< decltype(&Log::factory) >;
-					if constexpr(is_unique_ptr< factory_type >){
-						using log_type = typename factory_type::element_type;
-						return std::is_base_of_v< log_type, Log >;
-					}else{
-						return false;
-					}
-				}else{
-					return true;
-				}
-			}();
-
-		static_assert(has_factory_valid_return_type,
-			"static Log member function ::factory() must return a "
-			"std::unique_ptr< T > where T is equal or derived from Log.");
-
-		/// \brief true if has_factory is false, or factory() is nothrow
-		///        callable, false otherwise
-		static constexpr bool is_factory_noexcept =
-			[]{
-				if constexpr(has_factory){
-					return std::is_nothrow_invocable_v<
-						decltype(&Log::factory) >;
-				}else{
-					return true;
-				}
-			}();
-
-		static_assert(is_factory_noexcept,
-			"static Log member function ::factory() must be nothrow callable.");
-
-
-		static_assert(has_factory ||
+		static_assert(
 			std::is_nothrow_default_constructible_v< Log >,
-			"Log must either have a static member function ::factory() or "
-			"be nothrow default constructible");
+			"Log must be nothrow default constructible");
 	};
 
 

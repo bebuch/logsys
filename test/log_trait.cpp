@@ -24,7 +24,6 @@ namespace{
 	using trait_01 = logsys::log_trait< log_01 >;
 
 	static_assert(!trait_01::has_body_finished);
-	static_assert(!trait_01::has_factory);
 
 
 	struct log_02: log_required_functions{
@@ -34,7 +33,6 @@ namespace{
 	using trait_02 = logsys::log_trait< log_02 >;
 
 	static_assert( trait_02::has_body_finished);
-	static_assert(!trait_02::has_factory);
 
 
 	struct log_03: log_required_functions{
@@ -44,7 +42,6 @@ namespace{
 	using trait_03 = logsys::log_trait< log_03 >;
 
 	static_assert(!trait_03::has_body_finished);
-	static_assert( trait_03::has_factory);
 
 
 	struct log_04: log_03{};
@@ -52,7 +49,6 @@ namespace{
 	using trait_04 = logsys::log_trait< log_04 >;
 
 	static_assert(!trait_04::has_body_finished);
-	static_assert( trait_04::has_factory);
 
 
 }

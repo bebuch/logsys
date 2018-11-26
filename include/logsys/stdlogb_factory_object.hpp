@@ -16,10 +16,10 @@
 namespace logsys{
 
 
-	class stdlogb;
+	class stdlog_base;
 
 	/// \brief Assign your log object maker to this variable
-	extern std::unique_ptr< stdlogb >(*stdlogb_factory_object)()noexcept;
+	extern std::unique_ptr< stdlog_base >(*stdlogb_factory_object)()noexcept;
 
 
 }

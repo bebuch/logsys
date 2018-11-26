@@ -15,7 +15,7 @@
 namespace logsys{
 
 
-	std::unique_ptr< stdlogb > stdlogb::factory()noexcept try{
+	std::unique_ptr< stdlog_base > stdlogb::factory()noexcept try{
 		assert(stdlogb_factory_object != nullptr);
 		return stdlogb_factory_object();
 	}catch(std::exception const& e){

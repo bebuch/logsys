@@ -17,16 +17,10 @@ namespace logsys{
 
 
 	/// \brief Base class for dynamic log tag classes
-	class [[gnu::visibility("default")]] stdlogb{
+	class [[gnu::visibility("default")]] stdlog_base{
 	public:
-		/// \brief Create a stdlogb derived log object
-		///
-		/// Link against logsys/liblogsys.so and assign your log object creater
-		/// function to stdlogb_factory_object.
-		static std::unique_ptr< stdlogb > factory()noexcept;
-
 		/// \brief Destructor
-		virtual ~stdlogb()noexcept{}
+		virtual ~stdlog_base()noexcept{}
 
 
 		/// \brief Called after body function was executed
@@ -46,7 +40,7 @@ namespace logsys{
 
 		/// \brief Output operator overload
 		template < typename T >
-		friend stdlogb& operator<<(stdlogb& log, T&& data){
+		friend stdlog_base& operator<<(stdlog_base& log, T&& data){
 			using type = std::remove_cv_t< std::remove_reference_t< T > >;
 			if constexpr(
 				std::is_same_v< type, char > ||
@@ -63,6 +57,49 @@ namespace logsys{
 	protected:
 		/// \brief Provide an output stream for operator<<()
 		virtual std::ostream& os()noexcept = 0;
+	};
+
+
+	/// \brief Base class for dynamic log tag classes
+	class [[gnu::visibility("default")]] stdlogb{
+	public:
+		/// \brief Create a stdlogb derived log object
+		///
+		/// Link against logsys/liblogsys.so and assign your log object creater
+		/// function to stdlogb_factory_object.
+		static std::unique_ptr< stdlog_base > factory()noexcept;
+
+
+		/// \brief Construct a new derived log
+		stdlogb(): derived_(factory()) {}
+
+
+		/// \brief Called after body function was executed
+		void body_finished()noexcept{}
+
+		/// \brief Called if body function throw an exception
+		void set_body_exception(std::exception_ptr)noexcept{}
+
+		/// \brief Called if log function throw an exception
+		void set_log_exception(std::exception_ptr)noexcept{}
+
+		/// \brief Called after all work is done
+		///
+		/// Output your log message now.
+		void exec()const noexcept{}
+
+
+		/// \brief Output operator overload
+		template < typename T >
+		friend stdlogb& operator<<(stdlogb& log, T&& data){
+			using type = std::remove_cv_t< std::remove_reference_t< T > >;
+			*log.derived_ << static_cast< T&& >(data);
+			return log;
+		}
+
+	protected:
+		/// \brief The actual log object
+		std::unique_ptr< stdlog_base > derived_;
 	};
 
 
