@@ -17,6 +17,9 @@
 namespace logsys::detail{
 
 
+	struct nobody_t;
+
+
 	/// \brief Extract type of LogF parameter
 	template < typename LogF >
 	struct extract_log_impl;
@@ -147,21 +150,26 @@ namespace logsys::detail{
 	/// \brief Implementation of extract_log_t
 	template < typename LogF, typename BodyRT, typename Void = void >
 	struct extract_log{
-		using type = std::remove_reference_t<
-			typename extract_log_impl< LogF >::log_type >;
+		using log_type = typename extract_log_impl< LogF >::log_type;
+		using rtp_type = typename extract_log_impl< LogF >::rtp_type;
+
+		using type = std::remove_reference_t< log_type >;
 
 		static_assert(
-			std::is_lvalue_reference_v<
-				typename extract_log_impl< LogF >::log_type >,
+			!std::is_same_v< BodyRT, nobody_t > || std::is_void_v< rtp_type >,
+			"If there is not body LogMessageProvider must not have a second "
+			"parameter");
+
+		static_assert(
+			std::is_lvalue_reference_v< log_type >,
 			"First parameter of a LogMessageProvider must be a "
 			"lvalue-reference to your log-object.");
 
 		static_assert(
-			is_valid_body_return_type_parameter< BodyRT,
-				typename extract_log_impl< LogF >::rtp_type >,
+			is_valid_body_return_type_parameter< BodyRT, rtp_type >,
 			"If there is a second parameter in the LogMessageProvider, it "
 			"must be logsys::optional< BodyReturnType >. "
-			"(Optionally const and with lvalue references.)");
+			"(or logsys::optional< BodyReturnType > const&.)");
 	};
 
 	/// \brief Implementation of extract_log_t
@@ -175,14 +183,14 @@ namespace logsys::detail{
 
 
 	/// \brief Extract type of first parameter from log function
-	template < typename LogF, typename BodyRT = void >
+	template < typename LogF, typename BodyRT >
 	using extract_log_t =
 		typename extract_log< std::remove_reference_t< LogF >, BodyRT >::type;
 
 
 	/// \brief Checks whether extract_log_t< Log, BodyRT > is a
 	///        valid expression
-	template < typename LogF, typename BodyRT = void >
+	template < typename LogF, typename BodyRT >
 	constexpr bool is_extract_log_valid_v =
 		[]{
 			if constexpr(std::is_reference_v< LogF >){
@@ -194,11 +202,15 @@ namespace logsys::detail{
 			}else if constexpr(
 				is_defined_v< extract_log_impl< LogF > >
 			){
+				using log_type = typename extract_log_impl< LogF >::log_type;
+				using rtp_type = typename extract_log_impl< LogF >::rtp_type;
 				return
-					std::is_lvalue_reference_v<
-						typename extract_log_impl< LogF >::log_type > &&
-					is_valid_body_return_type_parameter< BodyRT,
-						typename extract_log_impl< LogF >::rtp_type >;
+					std::is_lvalue_reference_v< log_type > &&
+					(
+						!std::is_same_v< BodyRT, nobody_t > ||
+						std::is_void_v< rtp_type >
+					) &&
+					is_valid_body_return_type_parameter< BodyRT, rtp_type >;
 
 			}else{
 				return false;

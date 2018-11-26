@@ -19,34 +19,19 @@ namespace logsys{
 	/// \brief The standard dynamic log class
 	class stdlogd: public stdlogb, protected stdlog{
 	public:
-		/// \copydoc stdlog::pre()
-		void pre()noexcept override{
-			stdlog::pre();
+		/// \copydoc stdlog::body_finished()
+		void body_finished()noexcept override{
+			stdlog::body_finished();
 		}
 
-		/// \copydoc stdlog::post()
-		void post()noexcept override{
-			stdlog::post();
+		/// \copydoc stdlog::set_body_exception()
+		void set_body_exception(std::exception_ptr error)noexcept override{
+			stdlog::set_body_exception(error);
 		}
 
-		/// \copydoc stdlog::body_failed()
-		void body_failed()noexcept override{
-			stdlog::body_failed();
-		}
-
-		/// \copydoc stdlog::set_exception()
-		void set_exception(std::exception const& error)noexcept override{
-			stdlog::set_exception(error);
-		}
-
-		/// \copydoc stdlog::unknown_exception()
-		void unknown_exception()noexcept override{
-			stdlog::unknown_exception();
-		}
-
-		/// \copydoc stdlog::have_body()
-		void have_body()noexcept override{
-			stdlog::have_body();
+		/// \copydoc stdlog::set_log_exception()
+		void set_log_exception(std::exception_ptr error)noexcept override{
+			stdlog::set_log_exception(error);
 		}
 
 		/// \copydoc stdlog::exec()

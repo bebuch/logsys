@@ -21,132 +21,13 @@ namespace logsys::detail{
 	template < typename LogF, typename Log >
 	constexpr bool is_simple_log_f = std::is_invocable_v< LogF&, Log& >;
 
-	template < typename LogF, typename Log, typename Body >
+	template < typename LogF, typename Log, typename BodyRT >
 	constexpr bool is_extended_log_f = std::is_invocable_v< LogF&, Log&,
-		optional< std::invoke_result_t< Body& > > const& >;
+		optional< BodyRT > const& >;
 
-	template < typename LogF, typename Log, typename Body >
+	template < typename LogF, typename Log, typename BodyRT >
 	constexpr bool is_valid_log_f = is_simple_log_f< LogF, Log >
-		|| is_extended_log_f< LogF, Log, Body >;
-
-
-	/// \brief Output the log message
-	///
-	///   1. Call log->pre() if it exists
-	///   2. Call the log function: f(log)
-	///   3. Call log->post() if it exists
-	///   4. Call log->exec()
-	template < typename LogF, typename Log, typename T = void >
-	inline void exec_log(
-		LogF& log_f,
-		std::unique_ptr< Log >& log,
-		T const* result = nullptr
-	)noexcept{
-		if constexpr(log_trait< Log >::has_pre){
-			log->pre();
-		}
-
-		try{
-			if constexpr(std::is_void_v< T >){
-				(void)result; // Silance GCC
-				std::invoke(log_f, *log);
-			}else{
-				std::invoke(log_f, *log, result);
-			}
-		}catch(std::exception const& e){
-			std::cerr << "ERROR: exception while executing log function: "
-				<< e.what() << std::endl;
-			*log << "<EXCEPTION WHILE LOGGING: " << e.what() << ">";
-		}catch(...){
-			std::cerr << "ERROR: unknown exception while executing log function"
-				<< std::endl;
-			*log << "<EXCEPTION WHILE LOGGING: unknown exception>";
-		}
-
-		if constexpr(log_trait< Log >::has_post){
-			log->post();
-		}
-
-		log->exec();
-	}
-
-
-	/// \brief Call the associated code block
-	///
-	///   - If no exception appears:
-	///       1. return with associated code block result
-	///   - If an exception appears:
-	///       1. Call log->body_failed() if it exists
-	///       2. Call exec_log
-	///       3. rethrow the exception
-	template < typename LogF, typename Body, typename Log >
-	inline decltype(auto) exec_body(
-		LogF& log_f,
-		Body& body,
-		std::unique_ptr< Log >& log
-	)try{
-		if constexpr(std::is_void_v< std::invoke_result_t< Body& > >){
-			std::invoke(body);
-			exec_log(log_f, log);
-		}else{
-			decltype(auto) result = std::invoke(body);
-			if constexpr(is_simple_log_f< LogF, Log >){
-				exec_log(log_f, log);
-			}else{
-				exec_log(log_f, log, result);
-			}
-			return result;
-		}
-	}catch(...){
-		if constexpr(log_trait< Log >::has_body_failed){
-			log->body_failed();
-		}
-
-		if constexpr(is_simple_log_f< LogF, Log >){
-			exec_log(log_f, log);
-		}else{
-			exec_log(log_f, log, std::invoke_result_t< Body& >());
-		}
-
-		throw;
-	}
-
-	/// \brief Call the associated code block and catch exceptions
-	///
-	///   - If no exception appears:
-	///       1. return with associated code block result as optional
-	///   - If an exception appears:
-	///       1. exception is derived from std::exception
-	///           - yes: Call log->set_exception(exception)
-	///           - no: Call log->unknown_exception()
-	///       2. return with an empty optional
-	template < typename Body, typename Log >
-	inline auto exec_exception_catching_body(
-		Body& body,
-		std::unique_ptr< Log >& log
-	)noexcept{
-		using body_type = std::invoke_result_t< Body& >;
-		constexpr auto is_void = std::is_void_v< body_type >;
-
-		try{
-			if constexpr(is_void){
-				std::invoke(body);
-				return true;
-			}else{
-				return optional< body_type >(std::invoke(body));
-			}
-		}catch(std::exception const& error){
-			log->set_exception(error);
-		}catch(...){
-			log->unknown_exception();
-		}
-
-		if constexpr(is_void){
-			return false;
-		}else{
-			return optional< body_type >();
-		}
-	}
+		|| is_extended_log_f< LogF, Log, BodyRT >;
 
 
 	/// \brief Construct a new log object
@@ -155,11 +36,130 @@ namespace logsys::detail{
 	///       - yes: construct by calling Log::factory()
 	///       - no: construct by calling standard constructor
 	template < typename Log >
-	auto make_log()noexcept{
+	inline auto make_log()noexcept{
 		if constexpr(log_trait< Log >::has_factory){
-			return Log::factory();
+			return Log::factory(); // BUG: May throw
 		}else{
-			return std::unique_ptr< Log >();
+			return std::unique_ptr< Log >(); // BUG: May throw
+		}
+	}
+
+	/// \brief Execute user defined log function and call `exec` on log object
+	///
+	/// Call `set_log_exception` before `exec` if user defined log function
+	/// throwed an exception.
+	template < typename LogF, typename Log, typename BodyRT >
+	inline void exec_log(
+		LogF& log_f,
+		std::unique_ptr< Log >& log,
+		optional< BodyRT > const& return_value
+	)noexcept{
+		try{
+			if constexpr(is_simple_log_f< LogF, Log >){
+				(void)return_value; // Silance GCC
+				std::invoke(log_f, *log);
+			}else{
+				std::invoke(log_f, *log, return_value);
+			}
+		}catch(...){
+			log->set_log_exception(std::current_exception());
+		}
+
+		log->exec();
+	}
+
+	/// \brief Log without a body function
+	template < typename LogF, typename Log >
+	inline void log(LogF& log_f)noexcept{
+		auto log = detail::make_log< Log >();
+
+		try{
+			std::invoke(log_f, *log);
+		}catch(...){
+			log->set_log_exception(std::current_exception());
+		}
+
+		log->exec();
+	}
+
+	/// \brief Log with a body function
+	template < typename LogF, typename Log, typename Body, typename BodyRT >
+	inline BodyRT log(LogF& log_f, Body& body){
+		auto log = detail::make_log< Log >();
+
+		try{
+			if constexpr(std::is_void_v< BodyRT >){
+				std::invoke(body);
+
+				if constexpr(log_trait< Log >::has_body_finished){
+					log->body_finished();
+				}
+
+				exec_log< LogF, Log, BodyRT >(log_f, log, true);
+			}else{
+				optional< BodyRT > body_value(std::invoke(body));
+
+				if constexpr(log_trait< Log >::has_body_finished){
+					log->body_finished();
+				}
+
+				exec_log< LogF, Log, BodyRT >(log_f, log, body_value);
+
+				return static_cast< BodyRT >(*body_value);
+			}
+		}catch(...){
+			if constexpr(log_trait< Log >::has_body_finished){
+				log->body_finished();
+			}
+
+			log->set_body_exception(std::current_exception());
+
+			auto body_value = optional< BodyRT >();
+			exec_log< LogF, Log, BodyRT >(log_f, log, body_value);
+
+			throw;
+		}
+	}
+
+	/// \brief Exception catching log (with a body function)
+	template < typename LogF, typename Log, typename Body, typename BodyRT >
+	inline optional< BodyRT >
+	exception_catching_log(LogF& log_f, Body& body)noexcept{
+		auto log = detail::make_log< Log >();
+
+		try{
+			if constexpr(std::is_void_v< BodyRT >){
+				std::invoke(body);
+
+				if constexpr(log_trait< Log >::has_body_finished){
+					log->body_finished();
+				}
+
+				exec_log< LogF, Log, BodyRT >(log_f, log, true);
+
+				return true;
+			}else{
+				optional< BodyRT > body_value(std::invoke(body));
+
+				if constexpr(log_trait< Log >::has_body_finished){
+					log->body_finished();
+				}
+
+				exec_log< LogF, Log, BodyRT >(log_f, log, body_value);
+
+				return body_value;
+			}
+		}catch(...){
+			if constexpr(log_trait< Log >::has_body_finished){
+				log->body_finished();
+			}
+
+			log->set_body_exception(std::current_exception());
+
+			auto body_value = optional< BodyRT >();
+			exec_log< LogF, Log, BodyRT >(log_f, log, body_value);
+
+			return body_value;
 		}
 	}
 
@@ -175,52 +175,33 @@ namespace logsys{
 	/// Usage Example:
 	///
 	/// \code{.cpp}
-	/// log< your_log_tag_type >(
-	///     [](your_log_tag_type& os){ os << "your message"; });
+	/// log([](your_log_type& os){ os << "your message"; });
 	/// \endcode
-	///
-	/// If the call of the log message function is not overloaded, the library
-	/// can deduce the log type from the function parameter, so you don't need
-	/// to name it explicitly:
-	///
-	/// \code{.cpp}
-	/// log([](your_log_tag_type& os){ os << "your message"; });
-	/// \endcode
-	template < typename Log, typename LogF >
-	inline void log(LogF&& log_f)noexcept{
-		static_assert(detail::is_simple_log_f< LogF, Log >,
-			"Argument log_f is not a valid log message function. "
-			"A valid log()-call without body must have the form: "
-			"'logsys::log< Log >([](Log&){});' where Log is your Log type. "
-			"The explicit naming of Log as template argument is optional if"
-			"and only if the call of the given argument is not overloaded.");
-
-		auto log = detail::make_log< Log >();
-		detail::exec_log(log_f, log);
-	}
-
-	/// \copydoc log< Log, LogF >(LogF&&)
 	template < typename LogF >
 	inline void log(LogF&& log_f)noexcept{
-		static_assert(detail::is_extract_log_valid_v< LogF >,
+		static_assert(detail::is_extract_log_valid_v< LogF, detail::nobody_t >,
 			"Can not extract Log type from first parameter of the log "
 			"function. "
 			"A valid log()-call without body must have the form: "
-			"'logsys::log< Log >([](Log&){});' where Log is your Log type. "
-			"The explicit naming of Log as template argument is optional if"
-			"and only if the call of the given argument is not overloaded.");
+			"'logsys::log([](Log&){});' where Log is your Log type.");
 
-		::logsys::log< detail::extract_log_t< LogF > >(log_f);
+		using log_type = detail::extract_log_t< LogF, detail::nobody_t >;
+
+		static_assert(detail::is_simple_log_f< LogF, log_type >,
+			"Argument log_f is not a valid log message function. "
+			"A valid log()-call without body must have the form: "
+			"'logsys::log([](Log&){});' where Log is your Log type.");
+
+		::logsys::detail::log< LogF, log_type >(log_f);
 	}
-
 
 	/// \brief Add a log message with associated code block
 	///
 	/// Usage Example:
 	///
 	/// \code{.cpp}
-	/// int result = log< your_log_tag_type >(
-	///     [](your_log_tag_type& os, int const* result){
+	/// int result = log(
+	///     [](your_log_type& os, int const* result){
 	///         os << "your message";
 	///         // output result if body did not throw
 	///         if(result != nullptr) os << ": " << *result;
@@ -229,52 +210,33 @@ namespace logsys{
 	///         return 5;
 	///     });
 	/// \endcode
-	template < typename Log, typename LogF, typename Body >
-	inline std::invoke_result_t< Body&& > log(LogF&& log_f, Body&& body){
+	template < typename LogF, typename Body >
+	inline decltype(auto) log(LogF&& log_f, Body&& body){
 		static_assert(std::is_invocable_v< Body& >,
 			"Parameter body must be a callable without arguments.");
 
-		using result_type = std::invoke_result_t< Body& >;
-
-		static_assert(detail::is_valid_log_f< LogF, Log, Body >,
-			"Argument log_f is not a valid log message function. "
-			"A valid log()-call with body must have the form: "
-			"'logsys::log< Log >([](Log&){}, []{});' or "
-			"'logsys::log< Log >([](Log&, value_type const* value_ptr){}, "
-			"[]{ return value; });' where Log is your Log type. "
-			"The explicit naming of Log as template argument is optional if"
-			"and only if the call of the given argument is not overloaded.");
-
-
-		auto log = detail::make_log< Log >();
-
-		static_assert(detail::is_simple_log_f< LogF, Log >
-			|| !std::is_void_v< result_type >,
-			"return type of the body function is void. Remove the second "
-			"argument from your log message function.");
-
-		if constexpr(log_trait< Log >::has_have_body){
-			log->have_body();
-		}
-
-		return detail::exec_body(log_f, body, log);
-	}
-
-	/// \copydoc log< Log, LogF, Body >(LogF&&, Body&&)
-	template < typename LogF, typename Body >
-	inline std::invoke_result_t< Body&& > log(LogF&& log_f, Body&& body){
-		static_assert(detail::is_extract_log_valid_v< LogF >,
+		using body_return_type = std::invoke_result_t< Body& >;
+		static_assert(detail::is_extract_log_valid_v< LogF, body_return_type >,
 			"Can not extract Log type from first parameter of the log function."
 			"A valid log()-call with body must have the form: "
-			"'logsys::log< Log >([](Log&){}, []{});' or "
-			"'logsys::log< Log >([](Log&, value_type const* value_ptr){}, "
-			"[]{ return value; });' where Log is your Log type. "
-			"The explicit naming of Log as template argument is optional if"
-			"and only if the call of the given argument is not overloaded.");
+			"'logsys::log([](Log&){}, []{});' or "
+			"'logsys::log([](Log&, "
+			"logsys::optional< value_type > const& value){}, "
+			"[]{ return value; });' where Log is your Log type.");
 
-		return ::logsys::log< detail::extract_log_t< LogF > >(log_f, body);
+		using log_type = detail::extract_log_t< LogF, body_return_type >;
+// 		static_assert(
+// 			detail::is_valid_log_f< LogF, log_type, body_return_type >,
+// 			"Argument log_f is not a valid log message function. "
+// 			"A valid log()-call with body must have the form: "
+// 			"'logsys::log([](Log&){}, []{});' or "
+// 			"'logsys::log([](Log&, "
+// 			"logsys::optional< value_type > const& value){}, "
+// 			"[]{ return value; });' where Log is your Log type.");
+
+		return ::logsys::detail::log<
+			LogF, log_type, Body, body_return_type >(log_f, body);
 	}
-
 
 	/// \brief Catch all exceptions
 	///
@@ -295,51 +257,39 @@ namespace logsys{
 	///
 	/// \code{.cpp}
 	/// optional< int > result = exception_catching_log(
-	///     [](your_log_tag_type& os){ os << "your message"; },
+	///     [](your_log_type& os){ os << "your message"; },
 	///     []{
 	///         // your code
 	///         return 5;
 	///     });
 	/// \endcode
-	template < typename Log, typename LogF, typename Body >
-	inline auto exception_catching_log(LogF&& log_f, Body&& body)noexcept
-	-> std::conditional_t< std::is_void_v< std::invoke_result_t< Body&& > >,
-		bool, optional< std::invoke_result_t< Body&& > > >
-	{
-		auto log = detail::make_log< Log >();
-
-		if constexpr(log_trait< Log >::has_have_body){
-			log->have_body();
-		}
-
-		auto result = detail::exec_exception_catching_body(body, log);
-		if constexpr(detail::is_simple_log_f< LogF, Log >){
-			detail::exec_log(log_f, log);
-		}else{
-			detail::exec_log(log_f, log, result);
-		}
-		return result;
-	}
-
-	/// \copydoc exception_catching_log< Log, LogF, Body >(LogF&&, Body&&)
 	template < typename LogF, typename Body >
-	inline auto exception_catching_log(LogF&& log_f, Body&& body)noexcept
-	-> std::conditional_t< std::is_void_v< std::invoke_result_t< Body&& > >,
-		bool, optional< std::invoke_result_t< Body&& > > >
-	{
-		static_assert(detail::is_extract_log_valid_v< LogF >,
+	inline auto exception_catching_log(LogF&& log_f, Body&& body)noexcept{
+		static_assert(std::is_invocable_v< Body& >,
+			"Parameter body must be a callable without arguments.");
+
+		using body_return_type = std::invoke_result_t< Body& >;
+		static_assert(detail::is_extract_log_valid_v< LogF, body_return_type >,
 			"Can not extract Log type from first parameter of the "
 			"exception_catching_log function. A valid "
 			"exception_catching_log()-call must have the form: "
-			"'logsys::exception_catching_log< Log >([](Log&){}, []{});' or "
-			"'logsys::exception_catching_log< Log >("
-			"[](Log&, value_type const* value_ptr){}, "
-			"[]{ return value });' where Log is your Log type. "
-			"The explicit naming of Log as template argument is optional if"
-			"and only if the call of the given argument is not overloaded.");
+			"'logsys::exception_catching_log([](Log&){}, []{});' or "
+			"'logsys::exception_catching_log("
+			"[](Log&, logsys::optional< value_type > const& value){}, "
+			"[]{ return value });' where Log is your Log type.");
 
-		return ::logsys::exception_catching_log
-			< detail::extract_log_t< LogF > >(log_f, body);
+		using log_type = detail::extract_log_t< LogF, body_return_type >;
+// 		static_assert(
+// 			detail::is_valid_log_f< LogF, log_type, body_return_type >,
+// 			"Argument log_f is not a valid log message function. "
+// 			"A valid log()-call with body must have the form: "
+// 			"'logsys::exception_catching_log([](Log&){}, []{});' or "
+// 			"'logsys::exception_catching_log("
+// 			"[](Log&, logsys::optional< value_type > const& value){}, "
+// 			"[]{ return value });' where Log is your Log type.");
+
+		return ::logsys::detail::exception_catching_log<
+			LogF, log_type, Body, body_return_type >(log_f, body);
 	}
 
 

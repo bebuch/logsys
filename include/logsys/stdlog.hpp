@@ -24,113 +24,68 @@ namespace logsys{
 	/// \brief A timed log type
 	class stdlog{
 	public:
-		/// \brief Get a unique id for every message
-		static std::size_t unique_id()noexcept{
-			static std::atomic< std::size_t > next_id(0);
-			return next_id++;
-		}
-
 		/// \brief Save start time
 		stdlog()noexcept:
-			body_(false),
-			exception_(false),
 			id_(unique_id()),
 			start_(std::chrono::system_clock::now())
 			{ os_ << std::boolalpha; }
 
 		/// \brief Output ID and time block
-		void pre()noexcept try{
-			auto end = std::chrono::system_clock::now();
-
-			os_ << std::setfill('0') << std::setw(6) << id_ << ' ';
-
-			io_tools::time_to_string(os_, start_);
-
-			if(body_){
-				os_ << " ( " << std::setfill(' ') << std::setprecision(3)
-					<< std::setw(12)
-					<< std::chrono::duration< double, std::milli >(
-							end - start_
-						).count() << "ms ) ";
-			}else{
-				os_ << " ( no content     ) ";
-			}
-		}catch(std::exception const& e){
-			std::cerr << "terminate with exception in stdlog.pre(): "
-				<< e.what() << std::endl;
-			std::terminate();
-		}catch(...){
-			std::cerr << "terminate with unknown exception in stdlog.pre()"
-				<< std::endl;
-			std::terminate();
+		void body_finished()noexcept{
+			end_ = std::chrono::system_clock::now();
+			body_ = false;
 		}
 
-		/// \brief Output exception indicator
-		void post()noexcept try{
-			if(exception_) os_ << " (FAILED)";
-			os_ << exception_text_;
-		}catch(std::exception const& e){
-			std::cerr << "terminate with exception in stdlog.post(): "
-				<< e.what() << std::endl;
-			std::terminate();
-		}catch(...){
-			std::cerr << "terminate with unknown exception in stdlog.post()"
-				<< std::endl;
-			std::terminate();
+		/// \brief Save body exception
+		void set_body_exception(std::exception_ptr error)noexcept{
+			body_exception_ = error;
 		}
 
-		/// \brief Set exception indicator to true
-		void body_failed()noexcept{
-			exception_ = true;
-		}
-
-		/// \brief Save exception message
-		void set_exception(std::exception const& error)noexcept try{
-			auto error_type_name = [&error]()->std::string{
-				try{
-					using boost::typeindex::type_id_runtime;
-					return type_id_runtime(error).pretty_name();
-				}catch(std::exception const& e){
-					using namespace std::literals::string_literals;
-					return "could not find type: "s + e.what();
-				}catch(...){
-					return "could not find type";
-				}
-			}();
-
-			exception_text_ = " (EXCEPTION CATCHED: [" + error_type_name + "] "
-				+ error.what() + ")";
-		}catch(std::exception const& e){
-			std::cerr << "terminate with exception in stdlog.set_exception(): "
-				<< e.what() << std::endl;
-			std::terminate();
-		}catch(...){
-			std::cerr << "terminate with unknown exception in "
-				"stdlog.set_exception()" << std::endl;
-			std::terminate();
-		}
-
-		/// \brief Save text for unknown exception
-		void unknown_exception()noexcept try{
-			exception_text_ = " (UNKNOWN EXCEPTION CATCHED)";
-		}catch(std::exception const& e){
-			std::cerr << "terminate with exception in "
-				"stdlog.unknown_exception(): " << e.what() << std::endl;
-			std::terminate();
-		}catch(...){
-			std::cerr << "terminate with unknown exception in "
-				"stdlog.unknown_exception()" << std::endl;
-			std::terminate();
-		}
-
-		/// \brief Set body indicator to true
-		void have_body()noexcept{
-			body_ = true;
+		/// \brief Save log exception
+		void set_log_exception(std::exception_ptr error)noexcept{
+			log_exception_ = error;
 		}
 
 		/// \brief Output the combinded message to std::log
 		void exec()const noexcept try{
-			std::clog << (io_tools::mask_non_print(os_.str()) + '\n');
+			std::ostringstream os;
+
+			if(body_){
+				os << std::setfill('0') << std::setw(6) << id_ << ' ';
+
+				io_tools::time_to_string(os, start_);
+
+				os << " ( " << std::setfill(' ') << std::setprecision(3)
+					<< std::setw(12)
+					<< std::chrono::duration< double, std::milli >(
+							end_ - start_
+						).count() << "ms ) ";
+			}else{
+				os << " ( no content     ) ";
+			}
+
+			if(log_exception_){
+				os << " LOG FAILED: ";
+
+				print_exception(os, log_exception_);
+
+				os << "; Probably incomplete message: "
+					<< io_tools::mask_non_print(os_.str());
+			}else{
+				os << io_tools::mask_non_print(os_.str());
+			}
+
+			if(body_exception_){
+				os << " (BODY FAILED: ";
+
+				print_exception(os, body_exception_);
+
+				os << ')';
+			}
+
+			os << '\n';
+
+			std::clog << os.str();
 		}catch(std::exception const& e){
 			std::cerr << "terminate with exception in stdlog.exec(): "
 				<< e.what() << std::endl;
@@ -158,23 +113,58 @@ namespace logsys{
 		}
 
 	protected:
+		/// \brief Get a unique id for every message
+		static std::size_t unique_id()noexcept{
+			static std::atomic< std::size_t > next_id(0);
+			return next_id++;
+		}
+
+		static void print_exception(
+			std::ostringstream& os,
+			std::exception_ptr exception
+		){
+			try{
+				std::rethrow_exception(exception);
+			}catch(std::exception const& error){
+				os << '[';
+
+				try{
+					using boost::typeindex::type_id_runtime;
+					os << type_id_runtime(error).pretty_name();
+				}catch(std::exception const& e){
+					using namespace std::literals::string_literals;
+					os << "could not find type: " << e.what();
+				}catch(...){
+					os << "could not find type";
+				}
+
+				os << "] " << error.what() << ')';
+			}catch(...){
+				os << "unknown exception";
+			}
+		}
+
+
 		/// \brief The message stream
 		std::ostringstream os_;
 
-		/// \brief The exception text
-		std::string exception_text_;
-
 		/// \brief The body indicator
-		bool body_;
+		bool body_ = false;
 
-		/// \brief The exception indicator
-		bool exception_;
+		/// \brief Exception throw in body function
+		std::exception_ptr body_exception_ = nullptr;
+
+		/// \brief Exception throw in log function
+		std::exception_ptr log_exception_ = nullptr;
 
 		/// \brief The unique ID of this log message
 		std::size_t id_;
 
 		/// \brief Time point before associated code block is executed
-		std::chrono::system_clock::time_point const start_;
+		std::chrono::system_clock::time_point start_;
+
+		/// \brief Time point after associated code block is executed
+		std::chrono::system_clock::time_point end_;
 	};
 
 

@@ -12,58 +12,64 @@
 namespace {
 
 
-	using logsys::detail::is_valid_body_return_type_parameter;
-	using logsys::optional_lvalue_reference;
-	using logsys::optional_rvalue_reference;
+	using logsys::detail::nobody_t;
+	struct body_t;
 
-	static_assert( is_valid_body_return_type_parameter< void, bool >);
-	static_assert(!is_valid_body_return_type_parameter< void, bool& >);
-	static_assert( is_valid_body_return_type_parameter< void, bool const >);
-	static_assert( is_valid_body_return_type_parameter< void, bool const& >);
-	static_assert(!is_valid_body_return_type_parameter< void, bool&& >);
-	static_assert(!is_valid_body_return_type_parameter< void, bool const&& >);
+	using op_nobody_t = std::optional< nobody_t >;
+	using op_body_t = std::optional< body_t >;
 
-	static_assert( is_valid_body_return_type_parameter< int,
-		std::optional< int > >);
-	static_assert(!is_valid_body_return_type_parameter< int,
-		std::optional< int >& >);
-	static_assert( is_valid_body_return_type_parameter< int,
-		std::optional< int > const >);
-	static_assert( is_valid_body_return_type_parameter< int,
-		std::optional< int > const& >);
-	static_assert(!is_valid_body_return_type_parameter< int,
-		std::optional< int >&& >);
-	static_assert(!is_valid_body_return_type_parameter< int,
-		std::optional< int > const&& >);
+	template < typename T >
+	using opl = logsys::optional_lvalue_reference< T >;
 
-	static_assert( is_valid_body_return_type_parameter< int&,
-		optional_lvalue_reference< int > >);
-	static_assert(!is_valid_body_return_type_parameter< int&,
-		optional_lvalue_reference< int >& >);
-	static_assert( is_valid_body_return_type_parameter< int&,
-		optional_lvalue_reference< int > const >);
-	static_assert( is_valid_body_return_type_parameter< int&,
-		optional_lvalue_reference< int > const& >);
-	static_assert(!is_valid_body_return_type_parameter< int&,
-		optional_lvalue_reference< int >&& >);
-	static_assert(!is_valid_body_return_type_parameter< int&,
-		optional_lvalue_reference< int > const&& >);
+	template < typename T >
+	using opr = logsys::optional_rvalue_reference< T >;
 
-	static_assert( is_valid_body_return_type_parameter< int&&,
-		optional_rvalue_reference< int > >);
-	static_assert(!is_valid_body_return_type_parameter< int&&,
-		optional_rvalue_reference< int >& >);
-	static_assert( is_valid_body_return_type_parameter< int&&,
-		optional_rvalue_reference< int > const >);
-	static_assert( is_valid_body_return_type_parameter< int&&,
-		optional_rvalue_reference< int > const& >);
-	static_assert(!is_valid_body_return_type_parameter< int&&,
-		optional_rvalue_reference< int >&& >);
-	static_assert(!is_valid_body_return_type_parameter< int&&,
-		optional_rvalue_reference< int > const&& >);
+	template < typename BodyRT, typename RTP >
+	constexpr bool valid_rt_v =
+		logsys::detail::is_valid_body_return_type_parameter< BodyRT, RTP >;
+
+	template < typename LogF, typename BodyRT >
+	using log_t = logsys::detail::extract_log_t< LogF, BodyRT >;
+
+	template < typename LogF, typename BodyRT >
+	constexpr bool valid_v =
+		logsys::detail::is_extract_log_valid_v< LogF, BodyRT >;
 
 
-	struct A{};
+	template < typename T >
+	constexpr bool is_int_v = std::is_same_v< T, int >;
+
+
+	static_assert( valid_rt_v< void, bool >);
+	static_assert(!valid_rt_v< void, bool& >);
+	static_assert( valid_rt_v< void, bool const >);
+	static_assert( valid_rt_v< void, bool const& >);
+	static_assert(!valid_rt_v< void, bool&& >);
+	static_assert(!valid_rt_v< void, bool const&& >);
+
+	static_assert( valid_rt_v< int, std::optional< int > >);
+	static_assert(!valid_rt_v< int, std::optional< int >& >);
+	static_assert( valid_rt_v< int, std::optional< int > const >);
+	static_assert( valid_rt_v< int, std::optional< int > const& >);
+	static_assert(!valid_rt_v< int, std::optional< int >&& >);
+	static_assert(!valid_rt_v< int, std::optional< int > const&& >);
+
+	static_assert( valid_rt_v< int&, opl< int > >);
+	static_assert(!valid_rt_v< int&, opl< int >& >);
+	static_assert( valid_rt_v< int&, opl< int > const >);
+	static_assert( valid_rt_v< int&, opl< int > const& >);
+	static_assert(!valid_rt_v< int&, opl< int >&& >);
+	static_assert(!valid_rt_v< int&, opl< int > const&& >);
+
+	static_assert( valid_rt_v< int&&, opr< int > >);
+	static_assert(!valid_rt_v< int&&, opr< int >& >);
+	static_assert( valid_rt_v< int&&, opr< int > const >);
+	static_assert( valid_rt_v< int&&, opr< int > const& >);
+	static_assert(!valid_rt_v< int&&, opr< int >&& >);
+	static_assert(!valid_rt_v< int&&, opr< int > const&& >);
+
+
+	struct A;
 
 
 	constexpr void valid_fn_t1(int&){};
@@ -86,129 +92,120 @@ namespace {
 	};
 
 
-	template < typename T >
-	constexpr bool is_int_v = std::is_same_v< T, int >;
+	static_assert(valid_v< void(int&), void >);
+	static_assert(valid_v< void(&)(int&), void >);
+	static_assert(valid_v< void(&&)(int&), void >);
+	static_assert(valid_v< void(*)(int&), void >);
+	static_assert(valid_v< void(int&)noexcept, void >);
+	static_assert(valid_v< void(&)(int&)noexcept, void >);
+	static_assert(valid_v< void(&&)(int&)noexcept, void >);
+	static_assert(valid_v< void(*)(int&)noexcept, void >);
+	static_assert(valid_v< void(A::*)(int&), void >);
+	static_assert(valid_v< void(A::*)(int&)const, void >);
+	static_assert(valid_v< void(A::*)(int&)noexcept, void >);
+	static_assert(valid_v< void(A::*)(int&)const noexcept, void >);
+
+	static_assert(valid_v< void(int&, bool), void >);
+	static_assert(valid_v< void(&)(int&, bool), void >);
+	static_assert(valid_v< void(&&)(int&, bool), void >);
+	static_assert(valid_v< void(*)(int&, bool), void >);
+	static_assert(valid_v< void(int&, bool)noexcept, void >);
+	static_assert(valid_v< void(&)(int&, bool)noexcept, void >);
+	static_assert(valid_v< void(&&)(int&, bool)noexcept, void >);
+	static_assert(valid_v< void(*)(int&, bool)noexcept, void >);
+	static_assert(valid_v< void(A::*)(int&, bool), void >);
+	static_assert(valid_v< void(A::*)(int&, bool)const, void >);
+	static_assert(valid_v< void(A::*)(int&, bool)noexcept, void >);
+	static_assert(valid_v<
+		void(A::*)(int&, bool)const noexcept, void >);
+
+	static_assert(valid_v< void(int&), nobody_t >);
+	static_assert(valid_v< void(&)(int&), nobody_t >);
+	static_assert(valid_v< void(&&)(int&), nobody_t >);
+	static_assert(valid_v< void(*)(int&), nobody_t >);
+	static_assert(valid_v< void(int&)noexcept, nobody_t >);
+	static_assert(valid_v< void(&)(int&)noexcept, nobody_t >);
+	static_assert(valid_v< void(&&)(int&)noexcept, nobody_t >);
+	static_assert(valid_v< void(*)(int&)noexcept, nobody_t >);
+	static_assert(valid_v< void(A::*)(int&), nobody_t >);
+	static_assert(valid_v< void(A::*)(int&)const, nobody_t >);
+	static_assert(valid_v< void(A::*)(int&)noexcept, nobody_t >);
+	static_assert(valid_v< void(A::*)(int&)const noexcept, nobody_t >);
+
+	static_assert(valid_v< decltype(&valid_fn_t1), void >);
+	static_assert(valid_v< decltype(&valid_fn_n1), void >);
+
+	static_assert(valid_v< valid_object_t1, void >);
+	static_assert(valid_v< valid_object_t2, void >);
+	static_assert(valid_v< valid_object_n1, void >);
+	static_assert(valid_v< valid_object_n2, void >);
 
 
-	void valid(){
-		using logsys::detail::extract_log_t;
-		using logsys::detail::is_extract_log_valid_v;
+	static_assert(is_int_v< log_t< void(int&), void > >);
+	static_assert(is_int_v< log_t< void(&)(int&), void > >);
+	static_assert(is_int_v< log_t< void(&&)(int&), void > >);
+	static_assert(is_int_v< log_t< void(*)(int&), void > >);
+	static_assert(is_int_v< log_t< void(int&)noexcept, void > >);
+	static_assert(is_int_v< log_t< void(&)(int&)noexcept, void > >);
+	static_assert(is_int_v< log_t< void(&&)(int&)noexcept, void > >);
+	static_assert(is_int_v< log_t< void(*)(int&)noexcept, void > >);
+	static_assert(is_int_v< log_t< void(A::*)(int&), void > >);
+	static_assert(is_int_v< log_t< void(A::*)(int&)const, void > >);
+	static_assert(is_int_v< log_t< void(A::*)(int&)noexcept, void > >);
+	static_assert(is_int_v< log_t<
+		void(A::*)(int&)const noexcept, void > >);
 
-		int stuff = 0;
-		auto valid_lambda_t1 = [](int&){};
-		auto valid_lambda_t2 = [stuff](int&){};
-		auto valid_lambda_t3 = [&stuff](int&){};
-		auto valid_lambda_t4 = [](int&)mutable{};
-		auto valid_lambda_t5 = [stuff](int&)mutable{};
-		auto valid_lambda_t6 = [&stuff](int&)mutable{};
-
-		auto valid_lambda_n1 = [](int&)noexcept{};
-		auto valid_lambda_n2 = [stuff](int&)noexcept{};
-		auto valid_lambda_n3 = [&stuff](int&)noexcept{};
-		auto valid_lambda_n4 = [](int&)mutable noexcept{};
-		auto valid_lambda_n5 = [stuff](int&)mutable noexcept{};
-		auto valid_lambda_n6 = [&stuff](int&)mutable noexcept{};
-
-		static_assert(is_extract_log_valid_v< void(int&) >);
-		static_assert(is_extract_log_valid_v< void(&)(int&) >);
-		static_assert(is_extract_log_valid_v< void(&&)(int&) >);
-		static_assert(is_extract_log_valid_v< void(*)(int&) >);
-		static_assert(is_extract_log_valid_v< void(int&)noexcept >);
-		static_assert(is_extract_log_valid_v< void(&)(int&)noexcept >);
-		static_assert(is_extract_log_valid_v< void(&&)(int&)noexcept >);
-		static_assert(is_extract_log_valid_v< void(*)(int&)noexcept >);
-		static_assert(is_extract_log_valid_v< void(A::*)(int&) >);
-		static_assert(is_extract_log_valid_v< void(A::*)(int&)const >);
-		static_assert(is_extract_log_valid_v< void(A::*)(int&)noexcept >);
-		static_assert(is_extract_log_valid_v< void(A::*)(int&)const noexcept >);
-
-		static_assert(is_extract_log_valid_v< void(int&, bool) >);
-		static_assert(is_extract_log_valid_v< void(&)(int&, bool) >);
-		static_assert(is_extract_log_valid_v< void(&&)(int&, bool) >);
-		static_assert(is_extract_log_valid_v< void(*)(int&, bool) >);
-		static_assert(is_extract_log_valid_v< void(int&, bool)noexcept >);
-		static_assert(is_extract_log_valid_v< void(&)(int&, bool)noexcept >);
-		static_assert(is_extract_log_valid_v< void(&&)(int&, bool)noexcept >);
-		static_assert(is_extract_log_valid_v< void(*)(int&, bool)noexcept >);
-		static_assert(is_extract_log_valid_v< void(A::*)(int&, bool) >);
-		static_assert(is_extract_log_valid_v< void(A::*)(int&, bool)const >);
-		static_assert(is_extract_log_valid_v< void(A::*)(int&, bool)noexcept >);
-		static_assert(is_extract_log_valid_v<
-			void(A::*)(int&, bool)const noexcept >);
-
-		static_assert(is_extract_log_valid_v< decltype(&valid_fn_t1) >);
-		static_assert(is_extract_log_valid_v< decltype(&valid_fn_n1) >);
-
-		static_assert(is_extract_log_valid_v< valid_object_t1 >);
-		static_assert(is_extract_log_valid_v< valid_object_t2 >);
-		static_assert(is_extract_log_valid_v< valid_object_n1 >);
-		static_assert(is_extract_log_valid_v< valid_object_n2 >);
-
-		static_assert(is_extract_log_valid_v< decltype(valid_lambda_t1) >);
-		static_assert(is_extract_log_valid_v< decltype(valid_lambda_t2) >);
-		static_assert(is_extract_log_valid_v< decltype(valid_lambda_t3) >);
-		static_assert(is_extract_log_valid_v< decltype(valid_lambda_t4) >);
-		static_assert(is_extract_log_valid_v< decltype(valid_lambda_t5) >);
-		static_assert(is_extract_log_valid_v< decltype(valid_lambda_t6) >);
-		static_assert(is_extract_log_valid_v< decltype(valid_lambda_n1) >);
-		static_assert(is_extract_log_valid_v< decltype(valid_lambda_n2) >);
-		static_assert(is_extract_log_valid_v< decltype(valid_lambda_n3) >);
-		static_assert(is_extract_log_valid_v< decltype(valid_lambda_n4) >);
-		static_assert(is_extract_log_valid_v< decltype(valid_lambda_n5) >);
-		static_assert(is_extract_log_valid_v< decltype(valid_lambda_n6) >);
+	static_assert(is_int_v< log_t< void(int&, bool), void > >);
+	static_assert(is_int_v< log_t< void(&)(int&, bool), void > >);
+	static_assert(is_int_v< log_t< void(&&)(int&, bool), void > >);
+	static_assert(is_int_v< log_t< void(*)(int&, bool), void > >);
+	static_assert(is_int_v< log_t< void(int&, bool)noexcept, void > >);
+	static_assert(is_int_v< log_t< void(&)(int&, bool)noexcept, void > >);
+	static_assert(is_int_v< log_t<
+		void(&&)(int&, bool)noexcept, void > >);
+	static_assert(is_int_v< log_t< void(*)(int&, bool)noexcept, void > >);
+	static_assert(is_int_v< log_t< void(A::*)(int&, bool), void > >);
+	static_assert(is_int_v< log_t< void(A::*)(int&, bool)const, void > >);
+	static_assert(is_int_v< log_t<
+		void(A::*)(int&, bool)noexcept, void > >);
+	static_assert(is_int_v< log_t<
+		void(A::*)(int&, bool)const noexcept, void > >);
 
 
-		static_assert(is_int_v< extract_log_t< void(int&) > >);
-		static_assert(is_int_v< extract_log_t< void(&)(int&) > >);
-		static_assert(is_int_v< extract_log_t< void(&&)(int&) > >);
-		static_assert(is_int_v< extract_log_t< void(*)(int&) > >);
-		static_assert(is_int_v< extract_log_t< void(int&)noexcept > >);
-		static_assert(is_int_v< extract_log_t< void(&)(int&)noexcept > >);
-		static_assert(is_int_v< extract_log_t< void(&&)(int&)noexcept > >);
-		static_assert(is_int_v< extract_log_t< void(*)(int&)noexcept > >);
-		static_assert(is_int_v< extract_log_t< void(A::*)(int&) > >);
-		static_assert(is_int_v< extract_log_t< void(A::*)(int&)const > >);
-		static_assert(is_int_v< extract_log_t< void(A::*)(int&)noexcept > >);
-		static_assert(is_int_v< extract_log_t<
-			void(A::*)(int&)const noexcept > >);
+	static_assert(is_int_v< log_t< void(int&), nobody_t > >);
+	static_assert(is_int_v< log_t< void(&)(int&), nobody_t > >);
+	static_assert(is_int_v< log_t< void(&&)(int&), nobody_t > >);
+	static_assert(is_int_v< log_t< void(*)(int&), nobody_t > >);
+	static_assert(is_int_v< log_t< void(int&)noexcept, nobody_t > >);
+	static_assert(is_int_v< log_t< void(&)(int&)noexcept, nobody_t > >);
+	static_assert(is_int_v< log_t< void(&&)(int&)noexcept, nobody_t > >);
+	static_assert(is_int_v< log_t< void(*)(int&)noexcept, nobody_t > >);
+	static_assert(is_int_v< log_t< void(A::*)(int&), nobody_t > >);
+	static_assert(is_int_v< log_t< void(A::*)(int&)const, nobody_t > >);
+	static_assert(is_int_v< log_t< void(A::*)(int&)noexcept, nobody_t > >);
+	static_assert(is_int_v< log_t<
+		void(A::*)(int&)const noexcept, nobody_t > >);
 
-		static_assert(is_int_v< extract_log_t< void(int&, bool) > >);
-		static_assert(is_int_v< extract_log_t< void(&)(int&, bool) > >);
-		static_assert(is_int_v< extract_log_t< void(&&)(int&, bool) > >);
-		static_assert(is_int_v< extract_log_t< void(*)(int&, bool) > >);
-		static_assert(is_int_v< extract_log_t< void(int&, bool)noexcept > >);
-		static_assert(is_int_v< extract_log_t< void(&)(int&, bool)noexcept > >);
-		static_assert(is_int_v< extract_log_t<
-			void(&&)(int&, bool)noexcept > >);
-		static_assert(is_int_v< extract_log_t< void(*)(int&, bool)noexcept > >);
-		static_assert(is_int_v< extract_log_t< void(A::*)(int&, bool) > >);
-		static_assert(is_int_v< extract_log_t< void(A::*)(int&, bool)const > >);
-		static_assert(is_int_v< extract_log_t<
-			void(A::*)(int&, bool)noexcept > >);
-		static_assert(is_int_v< extract_log_t<
-			void(A::*)(int&, bool)const noexcept > >);
+	static_assert(is_int_v< log_t< decltype(&valid_fn_t1), void > >);
+	static_assert(is_int_v< log_t< decltype(&valid_fn_n1), void > >);
 
-		static_assert(is_int_v< extract_log_t< decltype(&valid_fn_t1) > >);
-		static_assert(is_int_v< extract_log_t< decltype(&valid_fn_n1) > >);
+	static_assert(is_int_v< log_t< valid_object_t1, void > >);
+	static_assert(is_int_v< log_t< valid_object_t2, void > >);
+	static_assert(is_int_v< log_t< valid_object_n1, void > >);
+	static_assert(is_int_v< log_t< valid_object_n2, void > >);
 
-		static_assert(is_int_v< extract_log_t< valid_object_t1 > >);
-		static_assert(is_int_v< extract_log_t< valid_object_t2 > >);
-		static_assert(is_int_v< extract_log_t< valid_object_n1 > >);
-		static_assert(is_int_v< extract_log_t< valid_object_n2 > >);
+	static_assert(valid_v< void(int&, op_body_t), body_t >);
+	static_assert(valid_v< void(&)(int&, op_body_t), body_t >);
+	static_assert(valid_v< void(&&)(int&, op_body_t), body_t >);
+	static_assert(valid_v< void(*)(int&, op_body_t), body_t >);
+	static_assert(valid_v< void(int&, op_body_t)noexcept, body_t >);
+	static_assert(valid_v< void(&)(int&, op_body_t)noexcept, body_t >);
+	static_assert(valid_v< void(&&)(int&, op_body_t)noexcept, body_t >);
+	static_assert(valid_v< void(*)(int&, op_body_t)noexcept, body_t >);
+	static_assert(valid_v< void(A::*)(int&, op_body_t), body_t >);
+	static_assert(valid_v< void(A::*)(int&, op_body_t)const, body_t >);
+	static_assert(valid_v< void(A::*)(int&, op_body_t)noexcept, body_t >);
 
-		static_assert(is_int_v< extract_log_t< decltype(valid_lambda_t1) > >);
-		static_assert(is_int_v< extract_log_t< decltype(valid_lambda_t2) > >);
-		static_assert(is_int_v< extract_log_t< decltype(valid_lambda_t3) > >);
-		static_assert(is_int_v< extract_log_t< decltype(valid_lambda_t4) > >);
-		static_assert(is_int_v< extract_log_t< decltype(valid_lambda_t5) > >);
-		static_assert(is_int_v< extract_log_t< decltype(valid_lambda_t6) > >);
-		static_assert(is_int_v< extract_log_t< decltype(valid_lambda_n1) > >);
-		static_assert(is_int_v< extract_log_t< decltype(valid_lambda_n2) > >);
-		static_assert(is_int_v< extract_log_t< decltype(valid_lambda_n3) > >);
-		static_assert(is_int_v< extract_log_t< decltype(valid_lambda_n4) > >);
-		static_assert(is_int_v< extract_log_t< decltype(valid_lambda_n5) > >);
-		static_assert(is_int_v< extract_log_t< decltype(valid_lambda_n6) > >);
-	}
 
 
 	constexpr void invalid_fn_t1p(int){};
@@ -275,55 +272,63 @@ namespace {
 	struct invalid_object_none{};
 
 
-	void invalid(){
-		using logsys::detail::is_extract_log_valid_v;
+	static_assert(!valid_v< void(int), void >);
+	static_assert(!valid_v< void(&)(int), void >);
+	static_assert(!valid_v< void(&&)(int), void >);
+	static_assert(!valid_v< void(*)(int), void >);
+	static_assert(!valid_v< void(int)noexcept, void >);
+	static_assert(!valid_v< void(&)(int)noexcept, void >);
+	static_assert(!valid_v< void(&&)(int)noexcept, void >);
+	static_assert(!valid_v< void(*)(int)noexcept, void >);
+	static_assert(!valid_v< void(int&, int), void >);
+	static_assert(!valid_v< void(&)(int&, int), void >);
+	static_assert(!valid_v< void(&&)(int&, int), void >);
+	static_assert(!valid_v< void(*)(int&, int), void >);
+	static_assert(!valid_v< void(int&, int)noexcept, void >);
+	static_assert(!valid_v< void(&)(int&, int)noexcept, void >);
+	static_assert(!valid_v< void(&&)(int&, int)noexcept, void >);
+	static_assert(!valid_v< void(*)(int&, int)noexcept, void >);
+	static_assert(!valid_v< void(), void >);
+	static_assert(!valid_v< void(&)(), void >);
+	static_assert(!valid_v< void(&&)(), void >);
+	static_assert(!valid_v< void(*)(), void >);
+	static_assert(!valid_v< void()noexcept, void >);
+	static_assert(!valid_v< void(&)()noexcept, void >);
+	static_assert(!valid_v< void(&&)()noexcept, void >);
+	static_assert(!valid_v< void(*)()noexcept, void >);
 
-		static_assert(!is_extract_log_valid_v< void(int) >);
-		static_assert(!is_extract_log_valid_v< void(&)(int) >);
-		static_assert(!is_extract_log_valid_v< void(&&)(int) >);
-		static_assert(!is_extract_log_valid_v< void(*)(int) >);
-		static_assert(!is_extract_log_valid_v< void(int)noexcept >);
-		static_assert(!is_extract_log_valid_v< void(&)(int)noexcept >);
-		static_assert(!is_extract_log_valid_v< void(&&)(int)noexcept >);
-		static_assert(!is_extract_log_valid_v< void(*)(int)noexcept >);
-		static_assert(!is_extract_log_valid_v< void(int&, int) >);
-		static_assert(!is_extract_log_valid_v< void(&)(int&, int) >);
-		static_assert(!is_extract_log_valid_v< void(&&)(int&, int) >);
-		static_assert(!is_extract_log_valid_v< void(*)(int&, int) >);
-		static_assert(!is_extract_log_valid_v< void(int&, int)noexcept >);
-		static_assert(!is_extract_log_valid_v< void(&)(int&, int)noexcept >);
-		static_assert(!is_extract_log_valid_v< void(&&)(int&, int)noexcept >);
-		static_assert(!is_extract_log_valid_v< void(*)(int&, int)noexcept >);
-		static_assert(!is_extract_log_valid_v< void() >);
-		static_assert(!is_extract_log_valid_v< void(&)() >);
-		static_assert(!is_extract_log_valid_v< void(&&)() >);
-		static_assert(!is_extract_log_valid_v< void(*)() >);
-		static_assert(!is_extract_log_valid_v< void()noexcept >);
-		static_assert(!is_extract_log_valid_v< void(&)()noexcept >);
-		static_assert(!is_extract_log_valid_v< void(&&)()noexcept >);
-		static_assert(!is_extract_log_valid_v< void(*)()noexcept >);
+	static_assert(!valid_v< decltype(&invalid_fn_t1p), void >);
+	static_assert(!valid_v< decltype(&invalid_fn_n1p), void >);
+	static_assert(!valid_v< decltype(&invalid_fn_t1c), void >);
+	static_assert(!valid_v< decltype(&invalid_fn_n1c), void >);
+	static_assert(!valid_v< decltype(&invalid_fn_t1n), void >);
+	static_assert(!valid_v< decltype(&invalid_fn_n1n), void >);
 
-		static_assert(!is_extract_log_valid_v< decltype(&invalid_fn_t1p) >);
-		static_assert(!is_extract_log_valid_v< decltype(&invalid_fn_n1p) >);
-		static_assert(!is_extract_log_valid_v< decltype(&invalid_fn_t1c) >);
-		static_assert(!is_extract_log_valid_v< decltype(&invalid_fn_n1c) >);
-		static_assert(!is_extract_log_valid_v< decltype(&invalid_fn_t1n) >);
-		static_assert(!is_extract_log_valid_v< decltype(&invalid_fn_n1n) >);
+	static_assert(!valid_v< invalid_object_t1p, void >);
+	static_assert(!valid_v< invalid_object_t2p, void >);
+	static_assert(!valid_v< invalid_object_n1p, void >);
+	static_assert(!valid_v< invalid_object_n2p, void >);
+	static_assert(!valid_v< invalid_object_t1c, void >);
+	static_assert(!valid_v< invalid_object_t2c, void >);
+	static_assert(!valid_v< invalid_object_n1c, void >);
+	static_assert(!valid_v< invalid_object_n2c, void >);
+	static_assert(!valid_v< invalid_object_t1n, void >);
+	static_assert(!valid_v< invalid_object_t2n, void >);
+	static_assert(!valid_v< invalid_object_n1n, void >);
+	static_assert(!valid_v< invalid_object_n2n, void >);
+	static_assert(!valid_v< invalid_object_multi, void >);
+	static_assert(!valid_v< invalid_object_none, void >);
 
-		static_assert(!is_extract_log_valid_v< invalid_object_t1p >);
-		static_assert(!is_extract_log_valid_v< invalid_object_t2p >);
-		static_assert(!is_extract_log_valid_v< invalid_object_n1p >);
-		static_assert(!is_extract_log_valid_v< invalid_object_n2p >);
-		static_assert(!is_extract_log_valid_v< invalid_object_t1c >);
-		static_assert(!is_extract_log_valid_v< invalid_object_t2c >);
-		static_assert(!is_extract_log_valid_v< invalid_object_n1c >);
-		static_assert(!is_extract_log_valid_v< invalid_object_n2c >);
-		static_assert(!is_extract_log_valid_v< invalid_object_t1n >);
-		static_assert(!is_extract_log_valid_v< invalid_object_t2n >);
-		static_assert(!is_extract_log_valid_v< invalid_object_n1n >);
-		static_assert(!is_extract_log_valid_v< invalid_object_n2n >);
-		static_assert(!is_extract_log_valid_v< invalid_object_multi >);
-		static_assert(!is_extract_log_valid_v< invalid_object_none >);
-	}
+	static_assert(!valid_v< void(int&, op_nobody_t), nobody_t >);
+	static_assert(!valid_v< void(&)(int&, op_nobody_t), nobody_t >);
+	static_assert(!valid_v< void(&&)(int&, op_nobody_t), nobody_t >);
+	static_assert(!valid_v< void(*)(int&, op_nobody_t), nobody_t >);
+	static_assert(!valid_v< void(int&, op_nobody_t)noexcept, nobody_t >);
+	static_assert(!valid_v< void(&)(int&, op_nobody_t)noexcept, nobody_t >);
+	static_assert(!valid_v< void(&&)(int&, op_nobody_t)noexcept, nobody_t >);
+	static_assert(!valid_v< void(*)(int&, op_nobody_t)noexcept, nobody_t >);
+	static_assert(!valid_v< void(A::*)(int&, op_nobody_t), nobody_t >);
+	static_assert(!valid_v< void(A::*)(int&, op_nobody_t)const, nobody_t >);
+	static_assert(!valid_v< void(A::*)(int&, op_nobody_t)noexcept, nobody_t >);
 
 }

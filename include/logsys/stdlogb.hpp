@@ -29,23 +29,14 @@ namespace logsys{
 		virtual ~stdlogb()noexcept{}
 
 
-		/// \brief Called immediate before message output
-		virtual void pre()noexcept{}
+		/// \brief Called after body function was executed
+		virtual void body_finished()noexcept{}
 
-		/// \brief Called immediate after message output
-		virtual void post()noexcept{}
+		/// \brief Called if body function throw an exception
+		virtual void set_body_exception(std::exception_ptr)noexcept{}
 
-		/// \brief Called after post() if an exception is active
-		virtual void body_failed()noexcept{}
-
-		/// \brief Called if an std::exception derived is active
-		virtual void set_exception(std::exception const&)noexcept{}
-
-		/// \brief Called if an not std::exception derived is active
-		virtual void unknown_exception()noexcept{}
-
-		/// \brief Called if a code block is associated with the log
-		virtual void have_body()noexcept{}
+		/// \brief Called if log function throw an exception
+		virtual void set_log_exception(std::exception_ptr)noexcept{}
 
 		/// \brief Called after all work is done
 		///

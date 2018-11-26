@@ -11,11 +11,19 @@
 
 #include "type_traits.hpp"
 
+#include <functional>
 #include <exception>
 #include <memory>
 
 
 namespace logsys{
+
+
+	template < typename T >
+	constexpr bool is_unique_ptr = false;
+
+	template < typename T >
+	constexpr bool is_unique_ptr< std::unique_ptr< T > > = true;
 
 
 	/// \brief Type trait for log types
@@ -27,129 +35,77 @@ namespace logsys{
 			[](auto& x)->decltype((void)x.exec()){});
 
 		static_assert(has_exec,
-			"Log has no member function .exec().");
+			"Log has no member function .exec()noexcept.");
 
 		/// \brief true if exec() is nothrow callable, false otherwise
 		static constexpr bool is_exec_noexcept =
 			noexcept(std::declval< Log >().exec());
 
 		static_assert(is_exec_noexcept,
-			"Log member function .exec() must be nothrow callable.");
+			"Log member function .exec()noexcept must be nothrow callable.");
 
 
-		/// \brief true if Log has a set_exception member function with one
-		///        lvalue argument of type std::exception, otherwise false
-		static constexpr bool has_set_exception = detail::is_valid< Log >(
+		/// \brief true if Log has a set_body_exception member function with one
+		///        argument of type std::exception_ptr, false otherwise
+		static constexpr bool has_set_body_exception = detail::is_valid< Log >(
 			[](auto& x)->decltype(
-				(void)x.set_exception(std::declval< std::exception const& >())
+				(void)x.set_body_exception(std::declval< std::exception_ptr >())
 			){});
 
-		static_assert(has_set_exception,
+		static_assert(has_set_body_exception,
 			"Log has no member function "
-			".set_exception(std::exception const&).");
+			".set_body_exception(std::exception_ptr)noexcept.");
 
-		/// \brief true if set_exception() is nothrow callable, false otherwise
-		static constexpr bool is_set_exception_noexcept =
-			noexcept(std::declval< Log >()
-				.set_exception(std::declval< std::exception const& >()));
-
-		static_assert(is_set_exception_noexcept,
-			"Log member function .set_exception() must be nothrow callable.");
-
-
-		/// \brief true if Log has a unknown_exception member function without
-		///        arguments, otherwise false
-		static constexpr bool has_unknown_exception = detail::is_valid< Log >(
-			[](auto& x)->decltype((void)x.unknown_exception()){});
-
-		static_assert(has_unknown_exception,
-			"Log has no member function .unknown_exception().");
-
-		/// \brief true if unknown_exception() is nothrow callable, false
+		/// \brief true if set_body_exception() is nothrow callable, false
 		///        otherwise
-		static constexpr bool is_unknown_exception_noexcept =
-			noexcept(std::declval< Log >().unknown_exception());
+		static constexpr bool is_set_body_exception_noexcept =
+			noexcept(std::declval< Log >()
+				.set_body_exception(std::declval< std::exception_ptr >()));
 
-		static_assert(is_unknown_exception_noexcept,
-			"Log member function .unknown_exception() must be nothrow "
-			"callable.");
+		static_assert(is_set_body_exception_noexcept,
+			"Log member function .set_body_exception(std::exception_ptr) must "
+			"be nothrow callable.");
 
 
-		/// \brief true if Log has a pre member function without arguments,
+		/// \brief true if Log has a set_log_exception member function with one
+		///        argument of type std::exception_ptr, false otherwise
+		static constexpr bool has_set_log_exception = detail::is_valid< Log >(
+			[](auto& x)->decltype(
+				(void)x.set_log_exception(std::declval< std::exception_ptr >())
+			){});
+
+		static_assert(has_set_log_exception,
+			"Log has no member function "
+			".set_log_exception(std::exception_ptr)noexcept.");
+
+		/// \brief true if set_log_exception() is nothrow callable, false
+		///        otherwise
+		static constexpr bool is_set_log_exception_noexcept =
+			noexcept(std::declval< Log >()
+				.set_log_exception(std::declval< std::exception_ptr >()));
+
+		static_assert(is_set_log_exception_noexcept,
+			"Log member function .set_log_exception(std::exception_ptr) must "
+			"be nothrow callable.");
+
+
+		/// \brief true if Log has a body_finished member function without arguments,
 		///        otherwise false
-		static constexpr bool has_pre = detail::is_valid< Log >(
-			[](auto& x)->decltype((void)x.pre()){});
+		static constexpr bool has_body_finished = detail::is_valid< Log >(
+			[](auto& x)->decltype((void)x.body_finished()){});
 
-		/// \brief true if has_pre is false, or pre() is nothrow callable,
+		/// \brief true if has_body_finished is false, or body_finished() is nothrow callable,
 		///        false otherwise
-		static constexpr bool is_pre_noexcept = []{
-				if constexpr(has_pre){
-					return noexcept(std::declval< Log >().pre());
+		static constexpr bool is_body_finished_noexcept = []{
+				if constexpr(has_body_finished){
+					return noexcept(std::declval< Log >().body_finished());
 				}else{
 					return true;
 				}
 			}();
 
-		static_assert(is_pre_noexcept,
-			"Log member function .pre() must be nothrow callable.");
-
-
-		/// \brief true if Log has a post member function without arguments,
-		///        otherwise false
-		static constexpr bool has_post = detail::is_valid< Log >(
-			[](auto& x)->decltype((void)x.post()){});
-
-		/// \brief true if has_post is false, or post() is nothrow callable,
-		///        false otherwise
-		static constexpr bool is_post_noexcept = []{
-				if constexpr(has_post){
-					return noexcept(std::declval< Log >().post());
-				}else{
-					return true;
-				}
-			}();
-
-		static_assert(is_post_noexcept,
-			"Log member function .post() must be nothrow callable.");
-
-
-		/// \brief true if Log has a body_failed member function without
-		///        arguments, otherwise false
-		static constexpr bool has_body_failed = detail::is_valid< Log >(
-			[](auto& x)->decltype((void)x.body_failed()){});
-
-		/// \brief true if has_body_failed is false, or body_failed() is
-		///        nothrow callable, false otherwise
-		static constexpr bool is_body_failed_noexcept = []{
-				if constexpr(has_body_failed){
-					return noexcept(std::declval< Log >().body_failed());
-				}else{
-					return true;
-				}
-			}();
-
-		static_assert(is_body_failed_noexcept,
-			"Log member function .body_failed() must be nothrow callable.");
-
-
-		/// \brief true if Log has a have_body member function
-		///        without arguments, otherwise false
-		static constexpr bool has_have_body = detail::is_valid< Log >(
-			[](auto& x)->decltype((void)x.have_body()){});
-
-		/// \brief true if has_have_body is false, or have_body() is nothrow
-		///        callable, false otherwise
-		static constexpr bool is_have_body_noexcept =
-			[]{
-				if constexpr(has_have_body){
-					return noexcept(std::declval< Log >().have_body());
-				}else{
-					return true;
-				}
-			}();
-
-		static_assert(is_have_body_noexcept,
-			"Log member function .have_body() must be nothrow callable.");
+		static_assert(is_body_finished_noexcept,
+			"Log member function .body_finished() must be nothrow callable.");
 
 
 		/// \brief true if Log has a static factory function without arguments
@@ -163,12 +119,14 @@ namespace logsys{
 		static constexpr bool has_factory_valid_return_type =
 			[]{
 				if constexpr(has_factory){
-					return detail::is_valid< Log >([](auto& x)->decltype((void)
-						static_cast< std::unique_ptr<
-							std::remove_reference_t< decltype(x) > > >(
-								std::remove_reference_t< decltype(x) >
-									::factory()
-							)){});
+					using factory_type =
+						std::invoke_result_t< decltype(&Log::factory) >;
+					if constexpr(is_unique_ptr< factory_type >){
+						using log_type = typename factory_type::element_type;
+						return std::is_base_of_v< log_type, Log >;
+					}else{
+						return false;
+					}
 				}else{
 					return true;
 				}
@@ -176,14 +134,15 @@ namespace logsys{
 
 		static_assert(has_factory_valid_return_type,
 			"static Log member function ::factory() must return a "
-			"std::unique_ptr< Log >.");
+			"std::unique_ptr< T > where T is equal or derived from Log.");
 
 		/// \brief true if has_factory is false, or factory() is nothrow
 		///        callable, false otherwise
 		static constexpr bool is_factory_noexcept =
 			[]{
 				if constexpr(has_factory){
-					return noexcept(std::declval< Log >().factory());
+					return std::is_nothrow_invocable_v<
+						decltype(&Log::factory) >;
 				}else{
 					return true;
 				}
