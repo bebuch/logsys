@@ -91,7 +91,7 @@ namespace logsys::detail{
 
 				exec_log< LogF, Log, BodyRT >(log_f, log, body_value);
 
-				return static_cast< BodyRT >(*body_value);
+				return *std::move(body_value);
 			}
 		}catch(...){
 			if constexpr(log_trait< Log >::has_body_finished){

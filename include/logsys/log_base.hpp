@@ -45,9 +45,9 @@ namespace logsys{
 		/// \brief Add a line to the log with linked code block
 		template < typename LogF, typename Body >
 		decltype(auto) log(LogF&& f, Body&& body)const{
-			using result_type = logsys::detail::result_as_ptr_t< Body >;
+			using body_return_type = std::invoke_result_t< Body& >;
 
-			if constexpr(std::is_void_v< result_type >){
+			if constexpr(std::is_void_v< body_return_type >){
 				static_assert(detail::is_void_log_fn< LogF >,
 					"expected a log call of the form: "
 					"'.log([](logsys::stdlogb&){}, []()->void{})'");
@@ -57,7 +57,8 @@ namespace logsys{
 					static_cast< Body&& >(body));
 			}else{
 				static_assert(detail::is_void_log_fn< LogF >
-					|| detail::is_result_log_fn< LogF, result_type >,
+					|| detail::is_result_log_fn< LogF,
+						optional< body_return_type > const& >,
 					"expected a log call of the form: "
 					"'.log([](logsys::stdlogb&){}, []{ return ...; })' or "
 					"'.log([](logsys::stdlogb&, auto const* result){}, "
@@ -69,7 +70,7 @@ namespace logsys{
 						static_cast< Body&& >(body));
 				}else{
 					return logsys::log< logsys::stdlogb >(
-						extended_impl< result_type >(f),
+						extended_impl< body_return_type >(f),
 						static_cast< Body&& >(body));
 				}
 			}
@@ -79,9 +80,9 @@ namespace logsys{
 		///        exceptions
 		template < typename LogF, typename Body >
 		decltype(auto) exception_catching_log(LogF&& f, Body&& body)const{
-			using result_type = logsys::detail::result_as_ptr_t< Body >;
+			using body_return_type = std::invoke_result_t< Body& >;
 
-			if constexpr(std::is_void_v< result_type >){
+			if constexpr(std::is_void_v< body_return_type >){
 				static_assert(detail::is_void_log_fn< LogF >,
 					"expected a log call of the form: "
 					"'.exception_catching_log([](logsys::stdlogb&){}, []{})'");
@@ -91,7 +92,8 @@ namespace logsys{
 					static_cast< Body&& >(body));
 			}else{
 				static_assert(detail::is_void_log_fn< LogF >
-					|| detail::is_result_log_fn< LogF, result_type >,
+					|| detail::is_result_log_fn< LogF,
+						optional< body_return_type > const& >,
 					"expected a log call of the form: "
 					"'.exception_catching_log([](logsys::stdlogb&){}, "
 					"[]{ return ...; })' or "
@@ -105,7 +107,7 @@ namespace logsys{
 						static_cast< Body&& >(body));
 				}else{
 					return logsys::exception_catching_log< logsys::stdlogb >(
-						extended_impl< result_type >(f),
+						extended_impl< body_return_type >(f),
 						static_cast< Body&& >(body));
 				}
 			}
@@ -139,7 +141,7 @@ namespace logsys{
 		/// \brief Helper for log message functions
 		template < typename T, typename LogF >
 		auto extended_impl(LogF& log)const{
-			return [&](logsys::stdlogb& os, T result){
+			return [&](logsys::stdlogb& os, T const& result){
 				os << log_prefix_;
 				log(os, result);
 			};

@@ -13,6 +13,7 @@
 namespace logsys{
 
 
+	[[gnu::visibility("default")]]
 	std::unique_ptr< stdlog_base >(*stdlogb_factory_object)()noexcept =
 		[]()noexcept->std::unique_ptr< stdlog_base >{
 			return std::make_unique< stdlogd >();

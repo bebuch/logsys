@@ -71,7 +71,7 @@ namespace logsys{
 
 
 		/// \brief Construct a new derived log
-		stdlogb(): derived_(factory()) {}
+		stdlogb()noexcept: derived_(factory()) {}
 
 
 		/// \brief Called after body function was executed
@@ -92,7 +92,6 @@ namespace logsys{
 		/// \brief Output operator overload
 		template < typename T >
 		friend stdlogb& operator<<(stdlogb& log, T&& data){
-			using type = std::remove_cv_t< std::remove_reference_t< T > >;
 			*log.derived_ << static_cast< T&& >(data);
 			return log;
 		}
