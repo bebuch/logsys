@@ -48,9 +48,14 @@ file(GLOB SOURCE_FILES src/*.cpp)
 
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
+# build tests
 add_subdirectory(test)
 enable_testing()
 add_test(NAME tests COMMAND tests)
+
+# build examples
+add_subdirectory(examples)
+
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
