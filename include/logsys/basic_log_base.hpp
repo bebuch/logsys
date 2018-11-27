@@ -56,7 +56,7 @@ namespace logsys{
 	struct basic_log_base{
 		/// \brief Add a line to the log
 		template < typename LogF >
-		void log(LogF&& log_f)const{
+		void log(LogF&& log_f)const noexcept{
 			detail::log(
 				manipulate_fn_forward< Derived >(
 					static_cast< Derived const& >(*this)), log_f);
@@ -73,7 +73,7 @@ namespace logsys{
 		/// \brief Add a line to the log with linked code block and catch all
 		///        exceptions
 		template < typename LogF, typename Body >
-		auto exception_catching_log(LogF&& log_f, Body&& body)const{
+		auto exception_catching_log(LogF&& log_f, Body&& body)const noexcept{
 			return detail::exception_catching_log(
 				manipulate_fn_forward< Derived >(
 					static_cast< Derived const& >(*this)), log_f, body);
