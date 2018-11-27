@@ -13,6 +13,7 @@
 #include "log_trait.hpp"
 
 #include <functional>
+#include <cassert>
 
 
 namespace logsys::detail{
@@ -140,20 +141,26 @@ namespace logsys::detail{
 				exec_log< ManipulatorF, LogF, Log, BodyRT >(
 					manipulator_f, log_f, log, body_value);
 
+				// BUG: Move constructor may throw
+				// TODO: Find a way to use RVO
 				return *std::move(body_value);
 			}
 		}catch(...){
-			if constexpr(log_trait< Log >::has_body_finished){
-				log.body_finished();
+			if constexpr(is_body_nothrow_v< Body >){
+				assert(false);
+			}else{
+				if constexpr(log_trait< Log >::has_body_finished){
+					log.body_finished();
+				}
+
+				log.set_body_exception(std::current_exception());
+
+				auto body_value = optional< BodyRT >();
+				exec_log< ManipulatorF, LogF, Log, BodyRT >(
+					manipulator_f, log_f, log, body_value);
+
+				throw;
 			}
-
-			log.set_body_exception(std::current_exception());
-
-			auto body_value = optional< BodyRT >();
-			exec_log< ManipulatorF, LogF, Log, BodyRT >(
-				manipulator_f, log_f, log, body_value);
-
-			throw;
 		}
 	}
 
