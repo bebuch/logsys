@@ -298,7 +298,16 @@ success: false
 
 - **throw:** Never
 
-### Optional type: `logsys::optional< T >`
+### Optional type: `logsys::optional< BodyRT >`
+
+The `BodyRT` is the return type of your body function.
+
+- `logsys::optional< void >` is `bool`
+- `logsys::optional< T >` is `std::optional< T >`
+- `logsys::optional< T& >` is `logsys::optional_lvalue_reference< T >`
+- `logsys::optional< T&& >` is `logsys::optional_rvalue_reference< T >`
+
+The last two definitions are uncommon. If you really return a reference from your body function, checkout the definitions of `logsys::optional_lvalue_reference< T >` and `logsys::optional_rvalue_reference< T >`. They have a similar interface to `std::optional` in [`optional.hpp`](include/logsys/optional.hpp).
 
 ## License notice
 
