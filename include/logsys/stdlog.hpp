@@ -97,8 +97,8 @@ namespace logsys{
 
 				print_exception(os, log_exception_);
 
-				os << "; Probably incomplete message: "
-					<< io_tools::mask_non_print(os_.str());
+				os << "; Probably incomplete log message: '"
+					<< io_tools::mask_non_print(os_.str()) << "'";
 			}else{
 				os << io_tools::mask_non_print(os_.str());
 			}
@@ -142,7 +142,7 @@ namespace logsys{
 					os << "could not find type";
 				}
 
-				os << "] " << error.what() << ')';
+				os << "] " << error.what();
 			}catch(...){
 				os << "unknown exception";
 			}
