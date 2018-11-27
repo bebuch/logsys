@@ -78,9 +78,9 @@ namespace logsys{
 		std::string make_log_line()const{
 			std::ostringstream os;
 
-			if(body_){
-				os << std::setfill('0') << std::setw(6) << id_ << ' ';
+			os << std::setfill('0') << std::setw(6) << id_ << ' ';
 
+			if(body_){
 				io_tools::time_to_string(os, start_);
 
 				os << " ( " << std::setfill(' ') << std::setprecision(3)
