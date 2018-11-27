@@ -33,7 +33,7 @@ namespace logsys{
 		/// \brief Output ID and time block
 		void body_finished()noexcept{
 			end_ = std::chrono::system_clock::now();
-			body_ = false;
+			body_ = true;
 		}
 
 		/// \brief Save body exception
