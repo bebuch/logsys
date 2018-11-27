@@ -20,8 +20,8 @@ namespace logsys{
 	public:
 		/// \brief Add a line to the log
 		template < typename LogF >
-		decltype(auto) log(LogF&& f)const{
-			return ref_.log(static_cast< LogF&& >(f));
+		void log(LogF&& f)const{
+			ref_.log(static_cast< LogF&& >(f));
 		}
 
 		/// \brief Add a line to the log with linked code block
@@ -34,7 +34,7 @@ namespace logsys{
 		/// \brief Add a line to the log with linked code block and catch all
 		///        exceptions
 		template < typename LogF, typename Body >
-		decltype(auto) exception_catching_log(LogF&& f, Body&& body)const{
+		auto exception_catching_log(LogF&& f, Body&& body)const{
 			return ref_.exception_catching_log(
 				static_cast< LogF&& >(f), static_cast< Body&& >(body));
 		}
