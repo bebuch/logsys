@@ -2,13 +2,13 @@
 
 A C++17 high performance log messages library.
 
-You can use this libery in two different ways. As header-only library or as linkable library.
+## Configuration
+
+You can use this libery in two different ways. As **header-only** library **or** as **linkable** library.
+
+If you want to use the log library in a application project, you can configure the log library completely at compile time and use the header-only approach.
 
 If you want to use the log library in another dynamic link libary, the linkable approach is the way to go. You will lose a little performance in exchange for the configurability of the log library in the main application that uses your library.
-
-If you want to use the log library in a application project you can configure the log library completely at compile time and use the header-only approach.
-
-## Configuration
 
 ## Usage
 
@@ -20,25 +20,285 @@ There are three functions you need to know:
 
 ### Log a message
 
+```cpp
+template < typename LogFn >
+void
+log(LogFn&& message_producer)
+noexcept;
 ```
-auto log(LogCallable&& message_producer)noexcept
--> void;
+
+- **throw:** Never
+
+#### Example 1
+
+```cpp
+#include <logsys/log.hpp>
+#include <logsys/stdlog.hpp>
+
+int main(){
+    logsys::log(
+        [](logsys::stdlog& log){
+            log << "Hello World!";
+        });
+}
+```
+
+**Output**
+
+```text
+000000  ( no content     ) Hello World!
+```
+
+#### Example 2
+
+```cpp
+#include <logsys/log.hpp>
+#include <logsys/stdlog.hpp>
+
+int main()try{
+    logsys::log(
+        [throw_exception = true](logsys::stdlog& log){
+            log << "Hello ";
+            if(throw_exception){
+                throw std::logic_error("throw in log fn!");
+            }
+            log << "World!";
+        });
+}catch(std::exception const& e){
+    std::cerr << "program terminated with exception: " << e.what() << '\n';
+}
+```
+
+**Output**
+
+```text
+000000  ( no content     )  LOG FAILED: [std::logic_error] throw in log fn!; Probably incomplete log message: 'Hello '
 ```
 
 ### Log a message bound to a code block
 
+```cpp
+template < typename LogFn, typename BodyFn >
+std::invoke_result_t< BodyFn& >
+log(LogFn&& message_producer, BodyFn&& body_fn)
+noexcept(std::is_nothrow_invocable_v< BodyFn& >);
 ```
-auto log(LogCallable&& message_producer, Body&& body)
--> std::invoke_result_t< Body&& >;
+
+- **throw:** Same as `body_fn()`
+
+#### Example 1
+
+```cpp
+#include <logsys/log.hpp>
+#include <logsys/stdlog.hpp>
+
+int main(){
+    logsys::log(
+        [](logsys::stdlog& log){
+            log << "calculate 5+5";
+        },
+        []{
+            std::cout << "Hello World!\n";
+        });
+}
+```
+
+**Output**
+
+```text
+Hello World!
+000000 2018-11-27 19:04:01 563.688 (        0.053ms ) calculate 5+5
+```
+
+#### Example 2
+
+```cpp
+#include <logsys/log.hpp>
+#include <logsys/stdlog.hpp>
+
+int main(){
+    int value = logsys::log(
+        [](logsys::stdlog& log){
+            log << "calculate 5+5";
+        },
+        []{
+            return 5 + 5;
+        });
+
+    std::cout << "Value: " << value << '\n';
+}
+```
+
+**Output**
+
+```text
+000000 2018-11-27 19:04:03 133.813 (        0.001ms ) calculate 5+5
+Value: 10
+```
+
+#### Example 3
+
+```cpp
+#include <logsys/log.hpp>
+#include <logsys/stdlog.hpp>
+
+int main()try{
+    int value = logsys::log(
+        [](logsys::stdlog& log){
+            log << "calculate 5+5";
+        },
+        [throw_exception = true]{
+            if(throw_exception){
+                throw std::runtime_error("something failed");
+            }
+            return 5 + 5;
+        });
+
+    std::cout << "Value: " << value << '\n';
+}catch(std::exception const& e){
+    std::cerr << "program terminated with exception: " << e.what() << '\n';
+}
+```
+
+**Output**
+
+```text
+000000 2018-11-27 19:04:04 200.633 (        0.081ms ) calculate 5+5 (BODY FAILED: [std::runtime_error] something failed)
+program terminated with exception: something failed
 ```
 
 ### Log a message bound to a code block and catch any exceptions
 
+```cpp
+template < typename LogFn, typename BodyFn >
+logsys::optional< std::invoke_result_t< BodyFn& > >
+exception_catching_log(LogFn&& message_producer, BodyFn&& body_fn)
+noexcept;
 ```
-auto exception_catching_log(LogCallable&& message_producer, Body&& body)noexcept
--> std::conditional_t< std::is_void_v< std::invoke_result_t< Body&& > >,
-    bool, optional< std::invoke_result_t< Body&& > > >
+
+#### Example 1
+
+```cpp
+#include <logsys/log.hpp>
+#include <logsys/stdlog.hpp>
+
+int main(){
+    bool success = logsys::exception_catching_log(
+        [](logsys::stdlog& log){
+            log << "calculate 5+5";
+        },
+        []{
+            std::cout << "Hello World!\n";
+        });
+
+    std::cout << std::boolalpha << "success: " << success << '\n';
+}
 ```
+
+**Output**
+
+```text
+Hello World!
+000000 2018-11-27 19:05:24 104.544 (        0.061ms ) calculate 5+5
+success: true
+```
+
+#### Example 2
+
+```cpp
+#include <logsys/log.hpp>
+#include <logsys/stdlog.hpp>
+
+int main(){
+    bool success = logsys::exception_catching_log(
+        [](logsys::stdlog& log){
+            log << "calculate 5+5";
+        },
+        []{
+            throw std::runtime_error("something failed");
+        });
+
+    std::cout << std::boolalpha << "success: " << success << '\n';
+}
+```
+
+**Output**
+
+```text
+000000 2018-11-27 19:05:25 673.545 (        0.079ms ) calculate 5+5 (BODY FAILED: [std::runtime_error] something failed)
+success: false
+```
+
+#### Example 3
+
+```cpp
+#include <logsys/log.hpp>
+#include <logsys/stdlog.hpp>
+
+int main(){
+    std::optional< int > value = logsys::exception_catching_log(
+        [](logsys::stdlog& log){
+            log << "calculate 5+5";
+        },
+        []{
+            return 5 + 5;
+        });
+
+    auto success = static_cast< bool >(value);
+    std::cout << std::boolalpha << "success: " << success << '\n';
+
+    if(success){
+        std::cout << "Value: " << *value << '\n';
+    }
+}
+```
+
+**Output**
+
+```text
+Hello World!
+000000 2018-11-27 19:05:26 690.952 (        0.000ms ) calculate 5+5
+success: true
+Value: 10
+```
+
+#### Example 4
+
+```cpp
+#include <logsys/log.hpp>
+#include <logsys/stdlog.hpp>
+
+int main(){
+    std::optional< int > value = logsys::exception_catching_log(
+        [](logsys::stdlog& log){
+            log << "calculate 5+5";
+        },
+        [throw_exception = true]{
+            if(throw_exception){
+                throw std::runtime_error("something failed");
+            }
+            return 5 + 5;
+        });
+
+    auto success = static_cast< bool >(value);
+    std::cout << std::boolalpha << "success: " << success << '\n';
+
+    if(success){
+        std::cout << "Value: " << *value << '\n';
+    }
+}
+```
+
+**Output**
+
+```text
+000000 2018-11-27 19:05:27 526.722 (        0.076ms ) calculate 5+5 (BODY FAILED: [std::runtime_error] something failed)
+success: false
+```
+
+- **throw:** Never
+
+### Optional type: `logsys::optional< T >`
 
 ## License notice
 
