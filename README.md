@@ -307,7 +307,7 @@ The `BodyRT` is the return type of your body function.
 - `logsys::optional< T& >` is `logsys::optional_lvalue_reference< T >`
 - `logsys::optional< T&& >` is `logsys::optional_rvalue_reference< T >`
 
-The last two definitions are uncommon. If you really return a reference from your body function, checkout the definitions of `logsys::optional_lvalue_reference< T >` and `logsys::optional_rvalue_reference< T >`. They have a similar interface to `std::optional` in [`optional.hpp`](include/logsys/optional.hpp).
+The last two definitions are uncommon. If you really return a reference from your body function, checkout the definitions of `logsys::optional_lvalue_reference< T >` and `logsys::optional_rvalue_reference< T >` in [`optional.hpp`](include/logsys/optional.hpp). They have a similar interface to `std::optional`.
 
 ## License notice
 
