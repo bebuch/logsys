@@ -75,18 +75,26 @@ namespace logsys{
 
 
 		/// \brief Called after body function was executed
-		void body_finished()noexcept{}
+		void body_finished()noexcept{
+			derived_->body_finished();
+		}
 
 		/// \brief Called if body function throw an exception
-		void set_body_exception(std::exception_ptr)noexcept{}
+		void set_body_exception(std::exception_ptr error)noexcept{
+			derived_->set_body_exception(error);
+		}
 
 		/// \brief Called if log function throw an exception
-		void set_log_exception(std::exception_ptr)noexcept{}
+		void set_log_exception(std::exception_ptr error)noexcept{
+			derived_->set_log_exception(error);
+		}
 
 		/// \brief Called after all work is done
 		///
 		/// Output your log message now.
-		void exec()const noexcept{}
+		void exec()const noexcept{
+			derived_->exec();
+		}
 
 
 		/// \brief Output operator overload
