@@ -26,7 +26,8 @@ namespace logsys{
 
 		/// \brief Add a line to the log with linked code block
 		template < typename LogF, typename Body >
-		decltype(auto) log(LogF&& f, Body&& body)const{
+		decltype(auto) log(LogF&& f, Body&& body)const
+		noexcept(detail::is_body_nothrow_v< Body >){ // TODO: static_assert that checks body must be called first
 			return ref_.log(
 				static_cast< LogF&& >(f), static_cast< Body&& >(body));
 		}

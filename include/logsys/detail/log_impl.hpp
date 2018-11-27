@@ -36,6 +36,9 @@ namespace logsys::detail{
 			"Parameter body must be a callable without arguments.");
 
 		using type = std::invoke_result_t< Body& >;
+
+		constexpr static bool is_nothrow_invocable_v =
+			std::is_nothrow_invocable_v< Body& >;
 	};
 
 	template < typename ManipulatorF, typename Log >
@@ -47,6 +50,10 @@ namespace logsys::detail{
 
 	template < typename Body >
 	using body_return_t = typename body_return_type< Body >::type;
+
+	template < typename Body >
+	constexpr bool is_body_nothrow_v =
+		body_return_type< Body >::is_nothrow_invocable_v;
 
 
 	/// \brief Execute user defined log function and call `exec` on log object
@@ -110,7 +117,7 @@ namespace logsys::detail{
 		ManipulatorF& manipulator_f,
 		LogF& log_f,
 		Body& body
-	){
+	)noexcept(is_body_nothrow_v< Body >){
 		auto log = Log();
 
 		try{
@@ -229,7 +236,7 @@ namespace logsys::detail{
 		ManipulatorF&& manipulator_f,
 		LogF&& log_f,
 		Body&& body
-	){
+	)noexcept(detail::is_body_nothrow_v< Body >){
 		using body_return_type = detail::body_return_t< Body >;
 		static_assert(
 			detail::is_extract_log_valid_v< LogF, body_return_type >,

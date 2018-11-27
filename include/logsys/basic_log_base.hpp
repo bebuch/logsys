@@ -64,7 +64,8 @@ namespace logsys{
 
 		/// \brief Add a line to the log with linked code block
 		template < typename LogF, typename Body >
-		decltype(auto) log(LogF&& log_f, Body&& body)const{
+		decltype(auto) log(LogF&& log_f, Body&& body)const
+		noexcept(detail::is_body_nothrow_v< Body >){
 			return detail::log(
 				manipulate_fn_forward< Derived >(
 					static_cast< Derived const& >(*this)), log_f, body);
