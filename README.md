@@ -10,6 +10,33 @@ If you want to use the log library in a application project, you can configure t
 
 If you want to use the log library in another dynamic link libary, the linkable approach is the way to go. You will lose a little performance in exchange for the configurability of the log library in the main application that uses your library.
 
+## Build and install
+
+If you want to install it for all users:
+
+```bash
+cmake /path/to/logsys
+make
+make install
+```
+
+If you want to install it without root permissions:
+
+```bash
+cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local /path/to/logsys
+make
+make install
+```
+
+When you installed the library, you can use `find_package(logsys)` in your `CMakeLists.txt`. It will define `${logsys_INCLUDE_DIR}` and  `${logsys_LIB_DIR}` which you can use in `include_directories` and `link_directories` to add the installed library to your header/lib search paths.
+
+If you installed it with `CMAKE_INSTALL_PREFIX`, you have to use `CMAKE_PREFIX_PATH` by configuring your own project, otherwise `find_package(logsys)` will not find `logsys`.
+
+```bash
+cmake -DCMAKE_PREFIX_PATH=$HOME/.local /path/to/your/project
+make
+```
+
 ## Usage
 
 There are three functions you need to know:
