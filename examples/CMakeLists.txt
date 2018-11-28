@@ -1,12 +1,6 @@
 project(examples)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-
 # Add test cpp file
-include_directories("../include")
-
 add_executable(log_01 log_01.cpp)
 target_link_libraries(log_01 logsys)
 
