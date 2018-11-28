@@ -3,7 +3,7 @@ gcc-test:
   image: tuiqbv/gcc-boost:latest
   stage: test
   script:
-    - script/setup.sh
+    - script/prepare.sh
     - script/build.sh
 
 # build and test with clang
@@ -11,5 +11,5 @@ llvm-test:
   image: tuiqbv/clang-boost:latest
   stage: test
   script:
-    - script/setup.sh
+    - script/prepare.sh
     - script/build.sh
