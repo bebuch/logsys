@@ -80,9 +80,9 @@ namespace logsys{
 
 			os << std::setfill('0') << std::setw(6) << id_ << ' ';
 
-			if(body_){
-				io_tools::time_to_string(os, start_);
+			io_tools::time_to_string(os, start_);
 
+			if(body_){
 				os << " ( " << std::setfill(' ') << std::setprecision(3)
 					<< std::setw(12)
 					<< std::chrono::duration< double, std::milli >(
