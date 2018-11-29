@@ -72,6 +72,8 @@ namespace logsys::detail{
 		Log& log,
 		optional< BodyRT > const& return_value
 	)noexcept{
+		manipulator_f(log);
+
 		try{
 			if constexpr(is_simple_log_f< LogF, Log >){
 				(void)return_value; // Silance GCC
@@ -83,7 +85,6 @@ namespace logsys::detail{
 			log.set_log_exception(std::current_exception());
 		}
 
-		manipulator_f(log);
 		log.exec();
 	}
 
