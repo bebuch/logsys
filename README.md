@@ -73,7 +73,7 @@ int main(){
 **Output**
 
 ```text
-000000  ( no content     ) Hello World!
+000000 2018-11-30 11:01:15 473.307 ( no content     ) Hello World!
 ```
 
 #### Example 2
@@ -99,7 +99,7 @@ int main()try{
 **Output**
 
 ```text
-000000  ( no content     )  LOG FAILED: [std::logic_error] throw in log fn!; Probably incomplete log message: 'Hello '
+000000 2018-11-30 11:01:17 613.086 ( no content     ) LOG EXCEPTION CATCHED: [std::logic_error] throw in log fn!; Probably incomplete log message: 'Hello '
 ```
 
 ### Log a message bound to a code block
@@ -134,7 +134,7 @@ int main(){
 
 ```text
 Hello World!
-000000 2018-11-27 19:04:01 563.688 (        0.053ms ) calculate 5+5
+000000 2018-11-30 11:01:21 301.842 (        0.052ms ) calculate 5+5
 ```
 
 #### Example 2
@@ -159,7 +159,7 @@ int main(){
 **Output**
 
 ```text
-000000 2018-11-27 19:04:03 133.813 (        0.001ms ) calculate 5+5
+000000 2018-11-30 11:01:23 088.971 (        0.004ms ) calculate 5+5
 Value: 10
 ```
 
@@ -190,7 +190,7 @@ int main()try{
 **Output**
 
 ```text
-000000 2018-11-27 19:04:04 200.633 (        0.081ms ) calculate 5+5 (BODY FAILED: [std::runtime_error] something failed)
+000000 2018-11-30 11:01:24 974.579 (        0.093ms ) calculate 5+5 (BODY EXCEPTION CATCHED: [std::runtime_error] something failed)
 program terminated with exception: something failed
 ```
 
@@ -226,7 +226,7 @@ int main(){
 
 ```text
 Hello World!
-000000 2018-11-27 19:05:24 104.544 (        0.061ms ) calculate 5+5
+000000 2018-11-30 11:01:28 718.579 (        0.048ms ) calculate 5+5
 success: true
 ```
 
@@ -252,7 +252,7 @@ int main(){
 **Output**
 
 ```text
-000000 2018-11-27 19:05:25 673.545 (        0.079ms ) calculate 5+5 (BODY FAILED: [std::runtime_error] something failed)
+000000 2018-11-30 11:01:29 794.074 (        0.094ms ) calculate 5+5 (BODY EXCEPTION CATCHED: [std::runtime_error] something failed)
 success: false
 ```
 
@@ -283,8 +283,7 @@ int main(){
 **Output**
 
 ```text
-Hello World!
-000000 2018-11-27 19:05:26 690.952 (        0.000ms ) calculate 5+5
+000000 2018-11-30 11:01:30 811.171 (        0.005ms ) calculate 5+5
 success: true
 Value: 10
 ```
@@ -319,7 +318,7 @@ int main(){
 **Output**
 
 ```text
-000000 2018-11-27 19:05:27 526.722 (        0.076ms ) calculate 5+5 (BODY FAILED: [std::runtime_error] something failed)
+000000 2018-11-30 11:01:32 665.695 (        0.086ms ) calculate 5+5 (BODY EXCEPTION CATCHED: [std::runtime_error] something failed)
 success: false
 ```
 
