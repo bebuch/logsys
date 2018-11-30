@@ -37,6 +37,28 @@ cmake -DCMAKE_PREFIX_PATH=$HOME/.local /path/to/your/project
 make
 ```
 
+
+### Build and run examples
+
+Build and run by:
+
+```bash
+cmake -Dlogsys_BUILD_EXAMPLES=ON /path/to/concurrent_queue
+make
+run-parts -v ./examples
+```
+
+### Build and run unit tests
+
+Build and run by:
+
+```bash
+cmake -Dlogsys_BUILD_TESTS=ON /path/to/concurrent_queue
+make
+./test/tests
+```
+
+
 ## Usage
 
 There are three functions you need to know:
