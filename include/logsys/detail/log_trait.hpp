@@ -64,7 +64,7 @@ namespace logsys{
 			noexcept(std::declval< Log >()
 				.set_body_exception(
 					std::declval< std::exception_ptr >(),
-					std::declval< bool >())));
+					std::declval< bool >()));
 
 		static_assert(is_set_body_exception_noexcept,
 			"Log member function .set_body_exception(std::exception_ptr, "
