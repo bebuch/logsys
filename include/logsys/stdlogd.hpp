@@ -25,8 +25,11 @@ namespace logsys{
 		}
 
 		/// \copydoc stdlog::set_body_exception()
-		void set_body_exception(std::exception_ptr error)noexcept override{
-			stdlog::set_body_exception(error);
+		void set_body_exception(
+			std::exception_ptr error,
+			bool rethrow
+		)noexcept override{
+			stdlog::set_body_exception(error, rethrow);
 		}
 
 		/// \copydoc stdlog::set_log_exception()

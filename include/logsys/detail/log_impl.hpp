@@ -154,7 +154,7 @@ namespace logsys::detail{
 					log.body_finished();
 				}
 
-				log.set_body_exception(std::current_exception());
+				log.set_body_exception(std::current_exception(), true);
 
 				auto body_value = optional< BodyRT >();
 				exec_log< ManipulatorF, LogF, Log, BodyRT >(
@@ -209,7 +209,7 @@ namespace logsys::detail{
 				log.body_finished();
 			}
 
-			log.set_body_exception(std::current_exception());
+			log.set_body_exception(std::current_exception(), false);
 
 			auto body_value = optional< BodyRT >();
 			exec_log< ManipulatorF, LogF, Log, BodyRT >(

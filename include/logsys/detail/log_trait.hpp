@@ -49,22 +49,26 @@ namespace logsys{
 		///        argument of type std::exception_ptr, false otherwise
 		static constexpr bool has_set_body_exception = detail::is_valid< Log >(
 			[](auto& x)->decltype(
-				(void)x.set_body_exception(std::declval< std::exception_ptr >())
+				(void)x.set_body_exception(
+					std::declval< std::exception_ptr >(),
+					std::declval< bool >())
 			){});
 
 		static_assert(has_set_body_exception,
 			"Log has no member function "
-			".set_body_exception(std::exception_ptr)noexcept.");
+			".set_body_exception(std::exception_ptr, bool rethrow)noexcept.");
 
 		/// \brief true if set_body_exception() is nothrow callable, false
 		///        otherwise
 		static constexpr bool is_set_body_exception_noexcept =
 			noexcept(std::declval< Log >()
-				.set_body_exception(std::declval< std::exception_ptr >()));
+				.set_body_exception(
+					std::declval< std::exception_ptr >(),
+					std::declval< bool >())));
 
 		static_assert(is_set_body_exception_noexcept,
-			"Log member function .set_body_exception(std::exception_ptr) must "
-			"be nothrow callable.");
+			"Log member function .set_body_exception(std::exception_ptr, "
+			"bool rethrow) must be nothrow callable.");
 
 
 		/// \brief true if Log has a set_log_exception member function with one

@@ -14,7 +14,7 @@ namespace{
 
 	struct log_required_functions{
 		void exec()noexcept;
-		void set_body_exception(std::exception_ptr error)noexcept;
+		void set_body_exception(std::exception_ptr error, bool rethrow)noexcept;
 		void set_log_exception(std::exception_ptr error)noexcept;
 	};
 

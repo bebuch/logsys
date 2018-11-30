@@ -23,6 +23,15 @@ namespace logsys{
 
 	/// \brief A timed log type
 	class stdlog{
+	private:
+		/// \brief Info about the body
+		enum body{
+			none,
+			exists,
+			failed_by_exception,
+			catched_exception,
+		};
+
 	public:
 		/// \brief Save start time
 		stdlog()noexcept:
@@ -33,12 +42,17 @@ namespace logsys{
 		/// \brief Output ID and time block
 		void body_finished()noexcept{
 			end_ = std::chrono::system_clock::now();
-			body_ = true;
+			body_ = body::exists;
 		}
 
 		/// \brief Save body exception
-		void set_body_exception(std::exception_ptr error)noexcept{
+		void set_body_exception(std::exception_ptr error, bool rethrow)noexcept{
 			body_exception_ = error;
+			if(rethrow){
+				body_ = body::failed_by_exception;
+			}else{
+				body_ = body::catched_exception;
+			}
 		}
 
 		/// \brief Save log exception
@@ -82,7 +96,7 @@ namespace logsys{
 
 			io_tools::time_to_string(os, start_);
 
-			if(body_){
+			if(body_ != body::none){
 				os << " ( " << std::setfill(' ') << std::setprecision(3)
 					<< std::setw(12)
 					<< std::chrono::duration< double, std::milli >(
@@ -93,7 +107,7 @@ namespace logsys{
 			}
 
 			if(log_exception_){
-				os << " LOG FAILED: ";
+				os << " LOG EXCEPTION CATCHED: ";
 
 				print_exception(os, log_exception_);
 
@@ -104,7 +118,11 @@ namespace logsys{
 			}
 
 			if(body_exception_){
-				os << " (BODY FAILED: ";
+				if(body_ != body::catched_exception){
+					os << " (BODY EXCEPTION CATCHED: ";
+				}else{
+					os << " (BODY FAILED: ";
+				}
 
 				print_exception(os, body_exception_);
 
@@ -153,7 +171,7 @@ namespace logsys{
 		std::ostringstream os_;
 
 		/// \brief The body indicator
-		bool body_ = false;
+		bool body_ = body::none;
 
 		/// \brief Exception throw in body function
 		std::exception_ptr body_exception_ = nullptr;
