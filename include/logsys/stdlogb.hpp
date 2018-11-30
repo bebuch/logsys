@@ -27,8 +27,7 @@ namespace logsys{
 		virtual void body_finished()noexcept{}
 
 		/// \brief Called if body function throw an exception
-		virtual void set_body_exception(
-			std::exception_ptr, bool rethrow)noexcept{}
+		virtual void set_body_exception(std::exception_ptr, bool)noexcept{}
 
 		/// \brief Called if log function throw an exception
 		virtual void set_log_exception(std::exception_ptr)noexcept{}

@@ -72,23 +72,23 @@ namespace {
 	struct A;
 
 
-	constexpr void valid_fn_t1(int&){};
-	constexpr void valid_fn_n1(int&)noexcept{};
+	constexpr void valid_fn_t1(int&){}
+	constexpr void valid_fn_n1(int&)noexcept{}
 
 	struct valid_object_t1{
-		constexpr void operator()(int&){};
+		constexpr void operator()(int&){}
 	};
 
 	struct valid_object_t2{
-		constexpr void operator()(int&)const{};
+		constexpr void operator()(int&)const{}
 	};
 
 	struct valid_object_n1{
-		constexpr void operator()(int&)noexcept{};
+		constexpr void operator()(int&)noexcept{}
 	};
 
 	struct valid_object_n2{
-		constexpr void operator()(int&)const noexcept{};
+		constexpr void operator()(int&)const noexcept{}
 	};
 
 
@@ -208,65 +208,65 @@ namespace {
 
 
 
-	constexpr void invalid_fn_t1p(int){};
-	constexpr void invalid_fn_n1p(int)noexcept{};
-	constexpr void invalid_fn_t1c(int&, int){};
-	constexpr void invalid_fn_n1c(int&, int)noexcept{};
-	constexpr void invalid_fn_t1n(){};
-	constexpr void invalid_fn_n1n()noexcept{};
+	constexpr void invalid_fn_t1p(int){}
+	constexpr void invalid_fn_n1p(int)noexcept{}
+	constexpr void invalid_fn_t1c(int&, int){}
+	constexpr void invalid_fn_n1c(int&, int)noexcept{}
+	constexpr void invalid_fn_t1n(){}
+	constexpr void invalid_fn_n1n()noexcept{}
 
 
 	struct invalid_object_t1p{
-		constexpr void operator()(int){};
+		constexpr void operator()(int){}
 	};
 
 	struct invalid_object_t2p{
-		constexpr void operator()(int)const{};
+		constexpr void operator()(int)const{}
 	};
 
 	struct invalid_object_n1p{
-		constexpr void operator()(int)noexcept{};
+		constexpr void operator()(int)noexcept{}
 	};
 
 	struct invalid_object_n2p{
-		constexpr void operator()(int)const noexcept{};
+		constexpr void operator()(int)const noexcept{}
 	};
 
 	struct invalid_object_t1c{
-		constexpr void operator()(int&, int){};
+		constexpr void operator()(int&, int){}
 	};
 
 	struct invalid_object_t2c{
-		constexpr void operator()(int&, int)const{};
+		constexpr void operator()(int&, int)const{}
 	};
 
 	struct invalid_object_n1c{
-		constexpr void operator()(int&, int)noexcept{};
+		constexpr void operator()(int&, int)noexcept{}
 	};
 
 	struct invalid_object_n2c{
-		constexpr void operator()(int&, int)const noexcept{};
+		constexpr void operator()(int&, int)const noexcept{}
 	};
 
 	struct invalid_object_t1n{
-		constexpr void operator()(){};
+		constexpr void operator()(){}
 	};
 
 	struct invalid_object_t2n{
-		constexpr void operator()()const{};
+		constexpr void operator()()const{}
 	};
 
 	struct invalid_object_n1n{
-		constexpr void operator()()noexcept{};
+		constexpr void operator()()noexcept{}
 	};
 
 	struct invalid_object_n2n{
-		constexpr void operator()()const noexcept{};
+		constexpr void operator()()const noexcept{}
 	};
 
 	struct invalid_object_multi{
-		constexpr void operator()(int&){};
-		constexpr void operator()(int&)const{};
+		constexpr void operator()(int&){}
+		constexpr void operator()(int&)const{}
 	};
 
 	struct invalid_object_none{};
