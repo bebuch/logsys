@@ -190,7 +190,7 @@ int main()try{
 **Output**
 
 ```text
-000000 2018-11-30 11:01:24 974.579 (        0.093ms ) calculate 5+5 (BODY EXCEPTION CATCHED: [std::runtime_error] something failed)
+000000 2018-11-30 11:12:02 951.863 (        0.090ms ) calculate 5+5 (BODY FAILED: [std::runtime_error] something failed)
 program terminated with exception: something failed
 ```
 
@@ -252,7 +252,7 @@ int main(){
 **Output**
 
 ```text
-000000 2018-11-30 11:01:29 794.074 (        0.094ms ) calculate 5+5 (BODY EXCEPTION CATCHED: [std::runtime_error] something failed)
+000000 2018-11-30 11:12:25 372.583 (        0.089ms ) calculate 5+5 (BODY EXCEPTION CATCHED: [std::runtime_error] something failed)
 success: false
 ```
 
@@ -318,7 +318,7 @@ int main(){
 **Output**
 
 ```text
-000000 2018-11-30 11:01:32 665.695 (        0.086ms ) calculate 5+5 (BODY EXCEPTION CATCHED: [std::runtime_error] something failed)
+000000 2018-11-30 11:12:27 174.654 (        0.096ms ) calculate 5+5 (BODY EXCEPTION CATCHED: [std::runtime_error] something failed)
 success: false
 ```
 

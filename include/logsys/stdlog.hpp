@@ -16,6 +16,7 @@
 
 #include <atomic>
 #include <iomanip>
+#include <cassert>
 
 
 namespace logsys{
@@ -47,6 +48,8 @@ namespace logsys{
 
 		/// \brief Save body exception
 		void set_body_exception(std::exception_ptr error, bool rethrow)noexcept{
+			assert(body_ == body::exists);
+
 			body_exception_ = error;
 			if(rethrow){
 				body_ = body::failed_by_exception;
@@ -118,10 +121,15 @@ namespace logsys{
 			}
 
 			if(body_exception_){
-				if(body_ != body::catched_exception){
-					os << " (BODY EXCEPTION CATCHED: ";
-				}else{
-					os << " (BODY FAILED: ";
+				switch(body_){
+					case body::catched_exception:
+						os << " (BODY EXCEPTION CATCHED: ";
+						break;
+					case body::failed_by_exception:
+						os << " (BODY FAILED: ";
+						break;
+					default:
+						assert(false);
 				}
 
 				print_exception(os, body_exception_);
@@ -171,7 +179,7 @@ namespace logsys{
 		std::ostringstream os_;
 
 		/// \brief The body indicator
-		bool body_ = body::none;
+		body body_ = body::none;
 
 		/// \brief Exception throw in body function
 		std::exception_ptr body_exception_ = nullptr;
