@@ -107,7 +107,7 @@ namespace logsys{
 			}
 
 			if(log_exception_){
-				os << " LOG EXCEPTION CATCHED: ";
+				os << "LOG EXCEPTION CATCHED: ";
 
 				print_exception(os, log_exception_);
 
