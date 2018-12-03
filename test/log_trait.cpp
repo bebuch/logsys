@@ -13,9 +13,10 @@ namespace{
 
 
 	struct log_required_functions{
-		void exec()noexcept;
-		void set_body_exception(std::exception_ptr error, bool rethrow)noexcept;
-		void set_log_exception(std::exception_ptr error)noexcept;
+		void exec()noexcept{}
+		void set_body_exception(
+			std::exception_ptr error, bool rethrow)noexcept{}
+		void set_log_exception(std::exception_ptr error)noexcept{}
 	};
 
 
@@ -27,28 +28,12 @@ namespace{
 
 
 	struct log_02: log_required_functions{
-		void body_finished()noexcept;
+		void body_finished()noexcept{}
 	};
 
 	using trait_02 = logsys::log_trait< log_02 >;
 
 	static_assert( trait_02::has_body_finished);
-
-
-	struct log_03: log_required_functions{
-		static std::unique_ptr< log_03 > factory()noexcept;
-	};
-
-	using trait_03 = logsys::log_trait< log_03 >;
-
-	static_assert(!trait_03::has_body_finished);
-
-
-	struct log_04: log_03{};
-
-	using trait_04 = logsys::log_trait< log_04 >;
-
-	static_assert(!trait_04::has_body_finished);
 
 
 }

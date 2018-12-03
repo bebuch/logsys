@@ -11,6 +11,5 @@ llvm-test:
   image: tuiqbv/clang-boost:latest
   stage: test
   script:
-    - env
     - script/prepare.sh
     - script/build.sh

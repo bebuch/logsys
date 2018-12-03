@@ -229,7 +229,7 @@ namespace logsys::detail{
 			"'logsys::log([](Log&){});' where Log is your Log type.");
 
 		using log_type = detail::extract_log_t< LogF, detail::nobody_t >;
-		manipulator_assert< ManipulatorF, log_type >{};
+		(void)manipulator_assert< ManipulatorF, log_type >{};
 
 		static_assert(detail::is_simple_log_f< LogF, log_type >,
 			"Argument log_f is not a valid log message function. "
@@ -256,7 +256,7 @@ namespace logsys::detail{
 			"[]{ return value; });' where Log is your Log type.");
 
 		using log_type = detail::extract_log_t< LogF, body_return_type >;
-		manipulator_assert< ManipulatorF, log_type >{};
+		(void)manipulator_assert< ManipulatorF, log_type >{};
 
 		return log_impl< ManipulatorF, LogF, log_type,
 			Body, body_return_type >(manipulator_f, log_f, body);
@@ -280,7 +280,7 @@ namespace logsys::detail{
 			"[]{ return value });' where Log is your Log type.");
 
 		using log_type = detail::extract_log_t< LogF, body_return_type >;
-		manipulator_assert< ManipulatorF, log_type >{};
+		(void)manipulator_assert< ManipulatorF, log_type >{};
 
 		return exception_catching_log_impl< ManipulatorF, LogF, log_type,
 			Body, body_return_type >(manipulator_f, log_f, body);

@@ -43,7 +43,7 @@ make
 Build and run by:
 
 ```bash
-cmake -Dlogsys_BUILD_EXAMPLES=ON /path/to/concurrent_queue
+cmake -DLOGSYS_BUILD_EXAMPLES=ON /path/to/concurrent_queue
 make
 run-parts -v ./examples
 ```
@@ -53,7 +53,7 @@ run-parts -v ./examples
 Build and run by:
 
 ```bash
-cmake -Dlogsys_BUILD_TESTS=ON /path/to/concurrent_queue
+cmake -DLOGSYS_BUILD_TESTS=ON /path/to/concurrent_queue
 make
 ./test/tests
 ```
