@@ -10,6 +10,8 @@
 #include <logsys/stdlogb.hpp>
 #include <logsys/log.hpp>
 
+#include "gtest/gtest.h"
+
 
 namespace{
 
@@ -270,6 +272,67 @@ namespace{
 
 	template struct test_log_object< logsys::stdlog >;
 	template struct test_log_object< logsys::stdlogb >;
+
+
+
+	TEST(log, without_body){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 1);
+				++i;
+			}
+
+			void set_body_exception(std::exception_ptr, bool)noexcept{
+				EXPECT_TRUE(false);
+			}
+
+			void set_log_exception(std::exception_ptr)noexcept{
+				EXPECT_TRUE(false);
+			}
+		};
+
+		logsys::log([](type& t){
+				EXPECT_EQ(t.i, 0);
+				++t.i;
+			});
+	}
+
+	TEST(log, without_body_log_exception){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void set_body_exception(std::exception_ptr, bool)noexcept{
+				EXPECT_TRUE(false);
+			}
+
+			void set_log_exception(std::exception_ptr error)noexcept{
+				EXPECT_EQ(i, 1);
+				++i;
+
+				try{
+					std::rethrow_exception(error);
+				}catch(std::runtime_error const& e){
+					using namespace std::literals::string_view_literals;
+					EXPECT_EQ(std::string_view(e.what()), "message"sv);
+				}catch(...){
+					EXPECT_TRUE(false);
+				}
+			}
+		};
+
+		logsys::log([](type& t){
+				EXPECT_EQ(t.i, 0);
+				++t.i;
+				throw std::runtime_error("message");
+			});
+	}
 
 
 }
