@@ -754,6 +754,7 @@ namespace{
 					body_executed = true;
 					throw std::runtime_error("message");
 				});
+			(void)result;
 		}catch(std::runtime_error const& e){
 			using namespace std::literals::string_view_literals;
 			EXPECT_EQ(std::string_view(e.what()), "message"sv);
@@ -808,6 +809,7 @@ namespace{
 					body_executed = true;
 					throw std::runtime_error("message");
 				});
+			(void)result;
 		}catch(std::runtime_error const& e){
 			using namespace std::literals::string_view_literals;
 			EXPECT_EQ(std::string_view(e.what()), "message"sv);
@@ -871,6 +873,7 @@ namespace{
 					body_executed = true;
 					throw std::runtime_error("body message");
 				});
+			(void)result;
 		}catch(std::runtime_error const& e){
 			using namespace std::literals::string_view_literals;
 			EXPECT_EQ(std::string_view(e.what()), "body message"sv);
