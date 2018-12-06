@@ -884,4 +884,532 @@ namespace{
 	}
 
 
+	TEST(log, with_void_catch){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 1);
+				++i;
+			}
+
+			void set_body_exception(std::exception_ptr, bool)noexcept{
+				EXPECT_TRUE(false);
+			}
+
+			void set_log_exception(std::exception_ptr)noexcept{
+				EXPECT_TRUE(false);
+			}
+		};
+
+		bool body_executed = false;
+		bool result = logsys::exception_catching_log([](type& t){
+				EXPECT_EQ(t.i, 0);
+				++t.i;
+			}, [&body_executed]{
+				EXPECT_FALSE(body_executed);
+				body_executed = true;
+			});
+		EXPECT_TRUE(result);
+		EXPECT_TRUE(body_executed);
+	}
+
+	TEST(log, with_void_catch_result_in_log){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 1);
+				++i;
+			}
+
+			void set_body_exception(std::exception_ptr, bool)noexcept{
+				EXPECT_TRUE(false);
+			}
+
+			void set_log_exception(std::exception_ptr)noexcept{
+				EXPECT_TRUE(false);
+			}
+		};
+
+		bool body_executed = false;
+		bool result = logsys::exception_catching_log([](type& t, bool success){
+				EXPECT_EQ(t.i, 0);
+				++t.i;
+				EXPECT_TRUE(success);
+			}, [&body_executed]{
+				EXPECT_FALSE(body_executed);
+				body_executed = true;
+			});
+		EXPECT_TRUE(result);
+		EXPECT_TRUE(body_executed);
+	}
+
+	TEST(log, with_void_catch_log_exception){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void set_body_exception(std::exception_ptr, bool)noexcept{
+				EXPECT_TRUE(false);
+			}
+
+			void set_log_exception(std::exception_ptr error)noexcept{
+				EXPECT_EQ(i, 1);
+				++i;
+
+				try{
+					std::rethrow_exception(error);
+				}catch(std::runtime_error const& e){
+					using namespace std::literals::string_view_literals;
+					EXPECT_EQ(std::string_view(e.what()), "message"sv);
+				}catch(...){
+					EXPECT_TRUE(false);
+				}
+			}
+		};
+
+		bool body_executed = false;
+		bool result = logsys::exception_catching_log([](type& t){
+				EXPECT_EQ(t.i, 0);
+				++t.i;
+				throw std::runtime_error("message");
+			}, [&body_executed]{
+				EXPECT_FALSE(body_executed);
+				body_executed = true;
+			});
+		EXPECT_TRUE(result);
+		EXPECT_TRUE(body_executed);
+	}
+
+	TEST(log, with_void_catch_exception){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void set_body_exception(
+				std::exception_ptr error,
+				bool rethrow
+			)noexcept{
+				EXPECT_EQ(i, 0);
+				++i;
+
+				EXPECT_FALSE(rethrow);
+
+				try{
+					std::rethrow_exception(error);
+				}catch(std::runtime_error const& e){
+					using namespace std::literals::string_view_literals;
+					EXPECT_EQ(std::string_view(e.what()), "message"sv);
+				}catch(...){
+					EXPECT_TRUE(false);
+				}
+			}
+
+			void set_log_exception(std::exception_ptr)noexcept{
+				EXPECT_TRUE(false);
+			}
+		};
+
+		bool body_executed = false;
+		bool result = logsys::exception_catching_log([](type& t){
+				EXPECT_EQ(t.i, 1);
+				++t.i;
+			}, [&body_executed]{
+				EXPECT_FALSE(body_executed);
+				body_executed = true;
+				throw std::runtime_error("message");
+			});
+		EXPECT_FALSE(result);
+		EXPECT_TRUE(body_executed);
+	}
+
+	TEST(log, with_void_catch_exception_and_result_in_log){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void set_body_exception(
+				std::exception_ptr error,
+				bool rethrow
+			)noexcept{
+				EXPECT_EQ(i, 0);
+				++i;
+
+				EXPECT_FALSE(rethrow);
+
+				try{
+					std::rethrow_exception(error);
+				}catch(std::runtime_error const& e){
+					using namespace std::literals::string_view_literals;
+					EXPECT_EQ(std::string_view(e.what()), "message"sv);
+				}catch(...){
+					EXPECT_TRUE(false);
+				}
+			}
+
+			void set_log_exception(std::exception_ptr)noexcept{
+				EXPECT_TRUE(false);
+			}
+		};
+
+		bool body_executed = false;
+		bool result = logsys::exception_catching_log([](type& t, bool success){
+				EXPECT_EQ(t.i, 1);
+				++t.i;
+				EXPECT_FALSE(success);
+			}, [&body_executed]{
+				EXPECT_FALSE(body_executed);
+				body_executed = true;
+				throw std::runtime_error("message");
+			});
+		EXPECT_FALSE(result);
+		EXPECT_TRUE(body_executed);
+	}
+
+	TEST(log, with_void_catch_both_exception){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void set_body_exception(
+				std::exception_ptr error,
+				bool rethrow
+			)noexcept{
+				EXPECT_EQ(i, 0);
+				++i;
+
+				EXPECT_FALSE(rethrow);
+
+				try{
+					std::rethrow_exception(error);
+				}catch(std::runtime_error const& e){
+					using namespace std::literals::string_view_literals;
+					EXPECT_EQ(std::string_view(e.what()), "body message"sv);
+				}catch(...){
+					EXPECT_TRUE(false);
+				}
+			}
+
+			void set_log_exception(std::exception_ptr error)noexcept{
+				EXPECT_EQ(i, 2);
+				++i;
+
+				try{
+					std::rethrow_exception(error);
+				}catch(std::runtime_error const& e){
+					using namespace std::literals::string_view_literals;
+					EXPECT_EQ(std::string_view(e.what()), "log message"sv);
+				}catch(...){
+					EXPECT_TRUE(false);
+				}
+			}
+		};
+
+		bool body_executed = false;
+		bool result = logsys::exception_catching_log([](type& t){
+				EXPECT_EQ(t.i, 1);
+				++t.i;
+				throw std::runtime_error("log message");
+			}, [&body_executed]{
+				EXPECT_FALSE(body_executed);
+				body_executed = true;
+				throw std::runtime_error("body message");
+			});
+		EXPECT_FALSE(result);
+		EXPECT_TRUE(body_executed);
+	}
+
+
+	TEST(log, with_int_catch){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 1);
+				++i;
+			}
+
+			void set_body_exception(std::exception_ptr, bool)noexcept{
+				EXPECT_TRUE(false);
+			}
+
+			void set_log_exception(std::exception_ptr)noexcept{
+				EXPECT_TRUE(false);
+			}
+		};
+
+		bool body_executed = false;
+		std::optional< int > result = logsys::exception_catching_log(
+			[](type& t){
+				EXPECT_EQ(t.i, 0);
+				++t.i;
+			}, [&body_executed]{
+				EXPECT_FALSE(body_executed);
+				body_executed = true;
+				return 555;
+			});
+		EXPECT_TRUE(static_cast< bool >(result));
+		if(result){
+			EXPECT_EQ(*result, 555);
+		}
+		EXPECT_TRUE(body_executed);
+	}
+
+	TEST(log, with_int_catch_result_in_log){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 1);
+				++i;
+			}
+
+			void set_body_exception(std::exception_ptr, bool)noexcept{
+				EXPECT_TRUE(false);
+			}
+
+			void set_log_exception(std::exception_ptr)noexcept{
+				EXPECT_TRUE(false);
+			}
+		};
+
+		bool body_executed = false;
+		std::optional< int > result = logsys::exception_catching_log(
+			[](type& t, std::optional< int > value){
+				EXPECT_EQ(t.i, 0);
+				++t.i;
+				EXPECT_TRUE(static_cast< bool >(value));
+				if(value){
+					EXPECT_EQ(*value, 555);
+				}
+			}, [&body_executed]{
+				EXPECT_FALSE(body_executed);
+				body_executed = true;
+				return 555;
+			});
+		EXPECT_TRUE(static_cast< bool >(result));
+		if(result){
+			EXPECT_EQ(*result, 555);
+		}
+		EXPECT_TRUE(body_executed);
+	}
+
+	TEST(log, with_int_catch_log_exception){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void set_body_exception(std::exception_ptr, bool)noexcept{
+				EXPECT_TRUE(false);
+			}
+
+			void set_log_exception(std::exception_ptr error)noexcept{
+				EXPECT_EQ(i, 1);
+				++i;
+
+				try{
+					std::rethrow_exception(error);
+				}catch(std::runtime_error const& e){
+					using namespace std::literals::string_view_literals;
+					EXPECT_EQ(std::string_view(e.what()), "message"sv);
+				}catch(...){
+					EXPECT_TRUE(false);
+				}
+			}
+		};
+
+		bool body_executed = false;
+		std::optional< int > result = logsys::exception_catching_log(
+			[](type& t){
+				EXPECT_EQ(t.i, 0);
+				++t.i;
+				throw std::runtime_error("message");
+			}, [&body_executed]{
+				EXPECT_FALSE(body_executed);
+				body_executed = true;
+				return 555;
+			});
+		EXPECT_TRUE(static_cast< bool >(result));
+		if(result){
+			EXPECT_EQ(*result, 555);
+		}
+		EXPECT_TRUE(body_executed);
+	}
+
+	TEST(log, with_int_catch_exception){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void set_body_exception(
+				std::exception_ptr error,
+				bool rethrow
+			)noexcept{
+				EXPECT_EQ(i, 0);
+				++i;
+
+				EXPECT_FALSE(rethrow);
+
+				try{
+					std::rethrow_exception(error);
+				}catch(std::runtime_error const& e){
+					using namespace std::literals::string_view_literals;
+					EXPECT_EQ(std::string_view(e.what()), "message"sv);
+				}catch(...){
+					EXPECT_TRUE(false);
+				}
+			}
+
+			void set_log_exception(std::exception_ptr)noexcept{
+				EXPECT_TRUE(false);
+			}
+		};
+
+		bool body_executed = false;
+		std::optional< int > result = logsys::exception_catching_log(
+			[](type& t){
+				EXPECT_EQ(t.i, 1);
+				++t.i;
+			}, [&body_executed]()->int{
+				EXPECT_FALSE(body_executed);
+				body_executed = true;
+				throw std::runtime_error("message");
+			});
+		EXPECT_FALSE(static_cast< bool >(result));
+		EXPECT_TRUE(body_executed);
+	}
+
+	TEST(log, with_int_catch_exception_and_result_in_log){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void set_body_exception(
+				std::exception_ptr error,
+				bool rethrow
+			)noexcept{
+				EXPECT_EQ(i, 0);
+				++i;
+
+				EXPECT_FALSE(rethrow);
+
+				try{
+					std::rethrow_exception(error);
+				}catch(std::runtime_error const& e){
+					using namespace std::literals::string_view_literals;
+					EXPECT_EQ(std::string_view(e.what()), "message"sv);
+				}catch(...){
+					EXPECT_TRUE(false);
+				}
+			}
+
+			void set_log_exception(std::exception_ptr)noexcept{
+				EXPECT_TRUE(false);
+			}
+		};
+
+		bool body_executed = false;
+		std::optional< int > result = logsys::exception_catching_log(
+			[](type& t, std::optional< int > value){
+				EXPECT_EQ(t.i, 1);
+				++t.i;
+				EXPECT_FALSE(static_cast< bool >(value));
+			}, [&body_executed]()->int{
+				EXPECT_FALSE(body_executed);
+				body_executed = true;
+				throw std::runtime_error("message");
+			});
+		EXPECT_FALSE(static_cast< bool >(result));
+		EXPECT_TRUE(body_executed);
+	}
+
+	TEST(log, with_int_catch_both_exception){
+		struct type{
+			std::size_t i = 0;
+
+			void exec()noexcept{
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void set_body_exception(
+				std::exception_ptr error,
+				bool rethrow
+			)noexcept{
+				EXPECT_EQ(i, 0);
+				++i;
+
+				EXPECT_FALSE(rethrow);
+
+				try{
+					std::rethrow_exception(error);
+				}catch(std::runtime_error const& e){
+					using namespace std::literals::string_view_literals;
+					EXPECT_EQ(std::string_view(e.what()), "body message"sv);
+				}catch(...){
+					EXPECT_TRUE(false);
+				}
+			}
+
+			void set_log_exception(std::exception_ptr error)noexcept{
+				EXPECT_EQ(i, 2);
+				++i;
+
+				try{
+					std::rethrow_exception(error);
+				}catch(std::runtime_error const& e){
+					using namespace std::literals::string_view_literals;
+					EXPECT_EQ(std::string_view(e.what()), "log message"sv);
+				}catch(...){
+					EXPECT_TRUE(false);
+				}
+			}
+		};
+
+		bool body_executed = false;
+		std::optional< int > result = logsys::exception_catching_log(
+			[](type& t){
+				EXPECT_EQ(t.i, 1);
+				++t.i;
+				throw std::runtime_error("log message");
+			}, [&body_executed]()->int{
+				EXPECT_FALSE(body_executed);
+				body_executed = true;
+				throw std::runtime_error("body message");
+			});
+		(void)result;
+		EXPECT_FALSE(static_cast< bool >(result));
+		EXPECT_TRUE(body_executed);
+	}
+
+
 }
