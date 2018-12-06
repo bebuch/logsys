@@ -284,6 +284,10 @@ namespace{
 				++i;
 			}
 
+			void body_finished()noexcept{
+				EXPECT_TRUE(false);
+			}
+
 			void set_body_exception(std::exception_ptr, bool)noexcept{
 				EXPECT_TRUE(false);
 			}
@@ -306,6 +310,10 @@ namespace{
 			void exec()noexcept{
 				EXPECT_EQ(i, 2);
 				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_TRUE(false);
 			}
 
 			void set_body_exception(std::exception_ptr, bool)noexcept{
@@ -339,7 +347,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 1);
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -354,7 +367,7 @@ namespace{
 
 		bool body_executed = false;
 		logsys::log([](type& t){
-				EXPECT_EQ(t.i, 0);
+				EXPECT_EQ(t.i, 1);
 				++t.i;
 			}, [&body_executed]{
 				EXPECT_FALSE(body_executed);
@@ -368,7 +381,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 1);
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -383,7 +401,7 @@ namespace{
 
 		bool body_executed = false;
 		logsys::log([](type& t, bool success){
-				EXPECT_EQ(t.i, 0);
+				EXPECT_EQ(t.i, 1);
 				++t.i;
 				EXPECT_TRUE(success);
 			}, [&body_executed]{
@@ -398,7 +416,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -407,7 +430,7 @@ namespace{
 			}
 
 			void set_log_exception(std::exception_ptr error)noexcept{
-				EXPECT_EQ(i, 1);
+				EXPECT_EQ(i, 2);
 				++i;
 
 				try{
@@ -423,7 +446,7 @@ namespace{
 
 		bool body_executed = false;
 		logsys::log([](type& t){
-				EXPECT_EQ(t.i, 0);
+				EXPECT_EQ(t.i, 1);
 				++t.i;
 				throw std::runtime_error("message");
 			}, [&body_executed]{
@@ -438,7 +461,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -446,7 +474,7 @@ namespace{
 				std::exception_ptr error,
 				bool rethrow
 			)noexcept{
-				EXPECT_EQ(i, 0);
+				EXPECT_EQ(i, 1);
 				++i;
 
 				EXPECT_TRUE(rethrow);
@@ -469,7 +497,7 @@ namespace{
 		bool body_executed = false;
 		try{
 			logsys::log([](type& t){
-					EXPECT_EQ(t.i, 1);
+					EXPECT_EQ(t.i, 2);
 					++t.i;
 				}, [&body_executed]{
 					EXPECT_FALSE(body_executed);
@@ -490,7 +518,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -498,7 +531,7 @@ namespace{
 				std::exception_ptr error,
 				bool rethrow
 			)noexcept{
-				EXPECT_EQ(i, 0);
+				EXPECT_EQ(i, 1);
 				++i;
 
 				EXPECT_TRUE(rethrow);
@@ -521,7 +554,7 @@ namespace{
 		bool body_executed = false;
 		try{
 			logsys::log([](type& t, bool success){
-					EXPECT_EQ(t.i, 1);
+					EXPECT_EQ(t.i, 2);
 					++t.i;
 					EXPECT_FALSE(success);
 				}, [&body_executed]{
@@ -543,7 +576,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 3);
+				EXPECT_EQ(i, 4);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -551,7 +589,7 @@ namespace{
 				std::exception_ptr error,
 				bool rethrow
 			)noexcept{
-				EXPECT_EQ(i, 0);
+				EXPECT_EQ(i, 1);
 				++i;
 
 				EXPECT_TRUE(rethrow);
@@ -567,7 +605,7 @@ namespace{
 			}
 
 			void set_log_exception(std::exception_ptr error)noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
 				++i;
 
 				try{
@@ -584,7 +622,7 @@ namespace{
 		bool body_executed = false;
 		try{
 			logsys::log([](type& t){
-					EXPECT_EQ(t.i, 1);
+					EXPECT_EQ(t.i, 2);
 					++t.i;
 					throw std::runtime_error("log message");
 				}, [&body_executed]{
@@ -607,7 +645,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 1);
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -622,7 +665,7 @@ namespace{
 
 		bool body_executed = false;
 		int result = logsys::log([](type& t){
-				EXPECT_EQ(t.i, 0);
+				EXPECT_EQ(t.i, 1);
 				++t.i;
 			}, [&body_executed]{
 				EXPECT_FALSE(body_executed);
@@ -638,7 +681,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 1);
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -654,7 +702,7 @@ namespace{
 		bool body_executed = false;
 		int result = logsys::log(
 			[](type& t, std::optional< int > value){
-				EXPECT_EQ(t.i, 0);
+				EXPECT_EQ(t.i, 1);
 				++t.i;
 				EXPECT_TRUE(static_cast< bool >(value));
 				if(value){
@@ -674,7 +722,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -683,7 +736,7 @@ namespace{
 			}
 
 			void set_log_exception(std::exception_ptr error)noexcept{
-				EXPECT_EQ(i, 1);
+				EXPECT_EQ(i, 2);
 				++i;
 
 				try{
@@ -699,7 +752,7 @@ namespace{
 
 		bool body_executed = false;
 		int result = logsys::log([](type& t){
-				EXPECT_EQ(t.i, 0);
+				EXPECT_EQ(t.i, 1);
 				++t.i;
 				throw std::runtime_error("message");
 			}, [&body_executed]{
@@ -716,7 +769,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -724,7 +782,7 @@ namespace{
 				std::exception_ptr error,
 				bool rethrow
 			)noexcept{
-				EXPECT_EQ(i, 0);
+				EXPECT_EQ(i, 1);
 				++i;
 
 				EXPECT_TRUE(rethrow);
@@ -747,7 +805,7 @@ namespace{
 		bool body_executed = false;
 		try{
 			int result = logsys::log([](type& t){
-					EXPECT_EQ(t.i, 1);
+					EXPECT_EQ(t.i, 2);
 					++t.i;
 				}, [&body_executed]()->int{
 					EXPECT_FALSE(body_executed);
@@ -769,7 +827,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -777,7 +840,7 @@ namespace{
 				std::exception_ptr error,
 				bool rethrow
 			)noexcept{
-				EXPECT_EQ(i, 0);
+				EXPECT_EQ(i, 1);
 				++i;
 
 				EXPECT_TRUE(rethrow);
@@ -801,7 +864,7 @@ namespace{
 		try{
 			int result = logsys::log(
 				[](type& t, std::optional< int > value){
-					EXPECT_EQ(t.i, 1);
+					EXPECT_EQ(t.i, 2);
 					++t.i;
 					EXPECT_FALSE(static_cast< bool >(value));
 				}, [&body_executed]()->int{
@@ -824,7 +887,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 3);
+				EXPECT_EQ(i, 4);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -832,7 +900,7 @@ namespace{
 				std::exception_ptr error,
 				bool rethrow
 			)noexcept{
-				EXPECT_EQ(i, 0);
+				EXPECT_EQ(i, 1);
 				++i;
 
 				EXPECT_TRUE(rethrow);
@@ -848,7 +916,7 @@ namespace{
 			}
 
 			void set_log_exception(std::exception_ptr error)noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
 				++i;
 
 				try{
@@ -865,7 +933,7 @@ namespace{
 		bool body_executed = false;
 		try{
 			int result = logsys::log([](type& t){
-					EXPECT_EQ(t.i, 1);
+					EXPECT_EQ(t.i, 2);
 					++t.i;
 					throw std::runtime_error("log message");
 				}, [&body_executed]()->int{
@@ -889,7 +957,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 1);
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -904,7 +977,7 @@ namespace{
 
 		bool body_executed = false;
 		bool result = logsys::exception_catching_log([](type& t){
-				EXPECT_EQ(t.i, 0);
+				EXPECT_EQ(t.i, 1);
 				++t.i;
 			}, [&body_executed]{
 				EXPECT_FALSE(body_executed);
@@ -919,7 +992,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 1);
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -934,7 +1012,7 @@ namespace{
 
 		bool body_executed = false;
 		bool result = logsys::exception_catching_log([](type& t, bool success){
-				EXPECT_EQ(t.i, 0);
+				EXPECT_EQ(t.i, 1);
 				++t.i;
 				EXPECT_TRUE(success);
 			}, [&body_executed]{
@@ -950,7 +1028,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -959,7 +1042,7 @@ namespace{
 			}
 
 			void set_log_exception(std::exception_ptr error)noexcept{
-				EXPECT_EQ(i, 1);
+				EXPECT_EQ(i, 2);
 				++i;
 
 				try{
@@ -975,7 +1058,7 @@ namespace{
 
 		bool body_executed = false;
 		bool result = logsys::exception_catching_log([](type& t){
-				EXPECT_EQ(t.i, 0);
+				EXPECT_EQ(t.i, 1);
 				++t.i;
 				throw std::runtime_error("message");
 			}, [&body_executed]{
@@ -991,7 +1074,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -999,7 +1087,7 @@ namespace{
 				std::exception_ptr error,
 				bool rethrow
 			)noexcept{
-				EXPECT_EQ(i, 0);
+				EXPECT_EQ(i, 1);
 				++i;
 
 				EXPECT_FALSE(rethrow);
@@ -1021,7 +1109,7 @@ namespace{
 
 		bool body_executed = false;
 		bool result = logsys::exception_catching_log([](type& t){
-				EXPECT_EQ(t.i, 1);
+				EXPECT_EQ(t.i, 2);
 				++t.i;
 			}, [&body_executed]{
 				EXPECT_FALSE(body_executed);
@@ -1037,7 +1125,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -1045,7 +1138,7 @@ namespace{
 				std::exception_ptr error,
 				bool rethrow
 			)noexcept{
-				EXPECT_EQ(i, 0);
+				EXPECT_EQ(i, 1);
 				++i;
 
 				EXPECT_FALSE(rethrow);
@@ -1067,7 +1160,7 @@ namespace{
 
 		bool body_executed = false;
 		bool result = logsys::exception_catching_log([](type& t, bool success){
-				EXPECT_EQ(t.i, 1);
+				EXPECT_EQ(t.i, 2);
 				++t.i;
 				EXPECT_FALSE(success);
 			}, [&body_executed]{
@@ -1084,7 +1177,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 3);
+				EXPECT_EQ(i, 4);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -1092,7 +1190,7 @@ namespace{
 				std::exception_ptr error,
 				bool rethrow
 			)noexcept{
-				EXPECT_EQ(i, 0);
+				EXPECT_EQ(i, 1);
 				++i;
 
 				EXPECT_FALSE(rethrow);
@@ -1108,7 +1206,7 @@ namespace{
 			}
 
 			void set_log_exception(std::exception_ptr error)noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
 				++i;
 
 				try{
@@ -1124,7 +1222,7 @@ namespace{
 
 		bool body_executed = false;
 		bool result = logsys::exception_catching_log([](type& t){
-				EXPECT_EQ(t.i, 1);
+				EXPECT_EQ(t.i, 2);
 				++t.i;
 				throw std::runtime_error("log message");
 			}, [&body_executed]{
@@ -1142,7 +1240,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 1);
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -1158,7 +1261,7 @@ namespace{
 		bool body_executed = false;
 		std::optional< int > result = logsys::exception_catching_log(
 			[](type& t){
-				EXPECT_EQ(t.i, 0);
+				EXPECT_EQ(t.i, 1);
 				++t.i;
 			}, [&body_executed]{
 				EXPECT_FALSE(body_executed);
@@ -1177,7 +1280,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 1);
+				EXPECT_EQ(i, 2);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -1193,7 +1301,7 @@ namespace{
 		bool body_executed = false;
 		std::optional< int > result = logsys::exception_catching_log(
 			[](type& t, std::optional< int > value){
-				EXPECT_EQ(t.i, 0);
+				EXPECT_EQ(t.i, 1);
 				++t.i;
 				EXPECT_TRUE(static_cast< bool >(value));
 				if(value){
@@ -1216,7 +1324,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -1225,7 +1338,7 @@ namespace{
 			}
 
 			void set_log_exception(std::exception_ptr error)noexcept{
-				EXPECT_EQ(i, 1);
+				EXPECT_EQ(i, 2);
 				++i;
 
 				try{
@@ -1242,7 +1355,7 @@ namespace{
 		bool body_executed = false;
 		std::optional< int > result = logsys::exception_catching_log(
 			[](type& t){
-				EXPECT_EQ(t.i, 0);
+				EXPECT_EQ(t.i, 1);
 				++t.i;
 				throw std::runtime_error("message");
 			}, [&body_executed]{
@@ -1262,7 +1375,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -1270,7 +1388,7 @@ namespace{
 				std::exception_ptr error,
 				bool rethrow
 			)noexcept{
-				EXPECT_EQ(i, 0);
+				EXPECT_EQ(i, 1);
 				++i;
 
 				EXPECT_FALSE(rethrow);
@@ -1293,7 +1411,7 @@ namespace{
 		bool body_executed = false;
 		std::optional< int > result = logsys::exception_catching_log(
 			[](type& t){
-				EXPECT_EQ(t.i, 1);
+				EXPECT_EQ(t.i, 2);
 				++t.i;
 			}, [&body_executed]()->int{
 				EXPECT_FALSE(body_executed);
@@ -1309,7 +1427,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -1317,7 +1440,7 @@ namespace{
 				std::exception_ptr error,
 				bool rethrow
 			)noexcept{
-				EXPECT_EQ(i, 0);
+				EXPECT_EQ(i, 1);
 				++i;
 
 				EXPECT_FALSE(rethrow);
@@ -1340,7 +1463,7 @@ namespace{
 		bool body_executed = false;
 		std::optional< int > result = logsys::exception_catching_log(
 			[](type& t, std::optional< int > value){
-				EXPECT_EQ(t.i, 1);
+				EXPECT_EQ(t.i, 2);
 				++t.i;
 				EXPECT_FALSE(static_cast< bool >(value));
 			}, [&body_executed]()->int{
@@ -1357,7 +1480,12 @@ namespace{
 			std::size_t i = 0;
 
 			void exec()noexcept{
-				EXPECT_EQ(i, 3);
+				EXPECT_EQ(i, 4);
+				++i;
+			}
+
+			void body_finished()noexcept{
+				EXPECT_EQ(i, 0);
 				++i;
 			}
 
@@ -1365,7 +1493,7 @@ namespace{
 				std::exception_ptr error,
 				bool rethrow
 			)noexcept{
-				EXPECT_EQ(i, 0);
+				EXPECT_EQ(i, 1);
 				++i;
 
 				EXPECT_FALSE(rethrow);
@@ -1381,7 +1509,7 @@ namespace{
 			}
 
 			void set_log_exception(std::exception_ptr error)noexcept{
-				EXPECT_EQ(i, 2);
+				EXPECT_EQ(i, 3);
 				++i;
 
 				try{
@@ -1398,7 +1526,7 @@ namespace{
 		bool body_executed = false;
 		std::optional< int > result = logsys::exception_catching_log(
 			[](type& t){
-				EXPECT_EQ(t.i, 1);
+				EXPECT_EQ(t.i, 2);
 				++t.i;
 				throw std::runtime_error("log message");
 			}, [&body_executed]()->int{
